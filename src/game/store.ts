@@ -30,7 +30,20 @@ type GameState = {
   /** True zodra de eerstvolgende steler heeft gekozen om te stelen. */
   stealing: boolean;
   bonusClaimed: boolean;
-  start: (names: string[], target: number, tokensEnabled?: boolean) => void;
+  start: (
+    names: string[],
+    target: number,
+    tokensEnabled?: boolean,
+    songs?: Song[],
+    /** True als de lijst al in de gewenste volgorde staat (jaartallen zijn dan vooraf gecontroleerd). */
+    preShuffled?: boolean,
+  ) => void;
+  /** Past het jaartal van een nummer aan dat nog in de stapel ligt (of nu geraden wordt). */
+  updateSongYear: (
+    id: string,
+    year: number,
+    source: Song["yearSource"],
+  ) => void;
   place: (index: number) => void;
   beginSteal: () => void;
   stealAt: (index: number) => void;
@@ -90,9 +103,15 @@ export const useGameStore = create<GameState>((set, get) => {
     target: 10,
     tokensEnabled: true,
 
-    start: (names, target, tokensEnabled = true) => {
+    start: (
+      names,
+      target,
+      tokensEnabled = true,
+      songs = SAMPLE_SONGS,
+      preShuffled = false,
+    ) => {
       const n = names.length;
-      const deck = shuffle(SAMPLE_SONGS);
+      const deck = preShuffled ? songs : shuffle(songs);
       // Iedereen begint met één kaartje in de tijdlijn.
       const players = names.map((name, id) => ({
         id,
@@ -103,7 +122,8 @@ export const useGameStore = create<GameState>((set, get) => {
       // Officieel: iedereen trekt een kaartje, het oudste begint. Die kaartjes gaan terug in de stapel.
       const starterCards = deck.slice(n, 2 * n);
       const active = pickStarter(starterCards);
-      const rest = shuffle([...deck.slice(2 * n), ...starterCards]);
+      const leftover = [...deck.slice(2 * n), ...starterCards];
+      const rest = preShuffled ? leftover : shuffle(leftover);
       set({
         ...initial,
         phase: "placing",
@@ -235,6 +255,17 @@ export const useGameStore = create<GameState>((set, get) => {
         stealQueue: [],
         stealing: false,
         bonusClaimed: false,
+      });
+    },
+
+    updateSongYear: (id, year, source) => {
+      const { deck, current, phase } = get();
+      const apply = (s: Song) =>
+        s.id === id ? { ...s, year, yearSource: source, yearChecked: true } : s;
+      set({
+        deck: deck.map(apply),
+        // Het nummer dat nu geraden wordt mag alleen veranderen zolang er nog niemand heeft gekozen.
+        current: current && phase === "placing" ? apply(current) : current,
       });
     },
 

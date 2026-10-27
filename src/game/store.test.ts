@@ -137,3 +137,59 @@ describe("pickStarter", () => {
     expect(pickStarter([song(1980), song(1980)])).toBe(0);
   });
 });
+
+describe("eigen nummers en jaartallen", () => {
+  beforeEach(() => setup());
+
+  const pool = (n: number, uri = true): Song[] =>
+    Array.from({ length: n }, (_, i) => ({
+      id: `p${i}`,
+      title: `T${i}`,
+      artist: "A",
+      year: 1960 + i,
+      ...(uri ? { uri: `spotify:track:p${i}` } : {}),
+    }));
+
+  it("speelt met de meegegeven nummers", () => {
+    useGameStore.getState().start(["A", "B"], 5, true, pool(14));
+    const ids = new Set([
+      ...s().players.flatMap((p) => p.timeline.map((x) => x.id)),
+      s().current?.id,
+      ...s().deck.map((x) => x.id),
+    ]);
+    expect([...ids].every((id) => String(id).startsWith("p"))).toBe(true);
+  });
+
+  it("houdt de volgorde aan bij een vooraf bepaalde lijst", () => {
+    const songs = pool(14);
+    useGameStore.getState().start(["A", "B"], 5, true, songs, true);
+    expect(s().players[0].timeline[0].id).toBe("p0");
+    expect(s().players[1].timeline[0].id).toBe("p1");
+    // Na de startkaartjes (2) en de kaartjes om te bepalen wie begint (2, terug onderin):
+    expect(s().current?.id).toBe("p4");
+  });
+
+  it("past het jaar aan van een nummer dat nog in de stapel ligt", () => {
+    useGameStore.setState({
+      deck: pool(3),
+      current: pool(1)[0],
+      phase: "placing",
+    });
+    s().updateSongYear("p1", 1950, "musicbrainz");
+    expect(s().deck.find((x) => x.id === "p1")).toMatchObject({
+      year: 1950,
+      yearSource: "musicbrainz",
+      yearChecked: true,
+    });
+  });
+
+  it("past het huidige nummer alleen aan zolang er nog niet gekozen is", () => {
+    const current = { ...pool(1)[0], id: "cur", year: 2011 };
+    useGameStore.setState({ current, deck: [], phase: "placing" });
+    s().updateSongYear("cur", 1975, "musicbrainz");
+    expect(s().current?.year).toBe(1975);
+    useGameStore.setState({ phase: "reveal" });
+    s().updateSongYear("cur", 1999, "musicbrainz");
+    expect(s().current?.year).toBe(1975);
+  });
+});

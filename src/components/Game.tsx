@@ -4,13 +4,15 @@ import { MotionConfig } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import { normalizeCode, useSession } from "@/net/session";
 import { useGameView } from "@/net/useGameView";
+import { useMusic } from "@/spotify/music";
 import { Home } from "./Home";
 import { HostLobby } from "./HostLobby";
 import { ControllerLobby, JoinScreen } from "./JoinScreen";
+import { MusicScreen } from "./MusicScreen";
 import { Setup } from "./Setup";
 import { Table } from "./Table";
 
-type Screen = "home" | "local" | "join";
+type Screen = "home" | "local" | "join" | "music";
 
 export function Game() {
   const view = useGameView();
@@ -19,13 +21,32 @@ export function Game() {
   const startHost = useSession((s) => s.startHost);
   const [screen, setScreen] = useState<Screen>("home");
   const [joinCode, setJoinCode] = useState("");
+  const [notice, setNotice] = useState<string | null>(null);
 
-  // De QR-code opent de app met ?join=ABCD: dan ga je meteen naar het meedoen-scherm.
+  // De laatst gekozen playlist komt vanzelf terug.
   useEffect(() => {
-    const code = new URLSearchParams(window.location.search).get("join");
+    useMusic.getState().restore();
+  }, []);
+
+  // De QR-code opent de app met ?join=ABCD, Spotify stuurt je terug met ?spotify=…
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get("join");
     if (code) {
       setJoinCode(normalizeCode(code));
       setScreen("join");
+    }
+    const spotify = params.get("spotify");
+    if (spotify === "connected") {
+      setNotice("Spotify is gekoppeld. Kies nu een playlist.");
+      setScreen("music");
+    } else if (spotify === "error") {
+      setNotice(params.get("message") ?? "Spotify koppelen is niet gelukt.");
+      setScreen("music");
+    }
+    if (spotify) {
+      // De melding hoeft niet in het adres te blijven staan.
+      window.history.replaceState(null, "", window.location.pathname);
     }
   }, []);
 
@@ -44,16 +65,31 @@ export function Game() {
   else if (role === "controller") content = <ControllerLobby />;
   else if (screen === "local")
     content = <Setup onBack={() => setScreen("home")} />;
-  else if (screen === "join") {
+  else if (screen === "music") {
+    content = (
+      <MusicScreen
+        notice={notice}
+        onBack={() => {
+          setNotice(null);
+          setScreen("home");
+        }}
+      />
+    );
+  } else if (screen === "join") {
     content = (
       <JoinScreen initialCode={joinCode} onBack={() => setScreen("home")} />
     );
   } else {
     content = (
       <Home
+        notice={notice}
         onLocal={() => setScreen("local")}
         onHost={() => void startHost()}
         onJoin={() => setScreen("join")}
+        onMusic={() => {
+          setNotice(null);
+          setScreen("music");
+        }}
       />
     );
   }

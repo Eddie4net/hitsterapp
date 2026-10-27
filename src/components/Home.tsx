@@ -1,9 +1,10 @@
 "use client";
 
-import { LogIn, MonitorSmartphone, Users } from "lucide-react";
+import { LogIn, MonitorSmartphone, Music2, Users } from "lucide-react";
 import type { ReactNode } from "react";
 import { useSession } from "@/net/session";
-import { Screen } from "./Screen";
+import { useMusic } from "@/spotify/music";
+import { Screen, SECONDARY_BUTTON } from "./Screen";
 
 function Option({
   icon,
@@ -40,14 +41,46 @@ function Option({
   );
 }
 
+/** Welke muziek is er gekozen? Hier kies je ook je eigen Spotify-playlist. */
+function MusicRow({ onMusic }: { onMusic: () => void }) {
+  const { source, playlist, status, songs } = useMusic();
+  return (
+    <div className="mb-5 flex items-center gap-3 rounded-2xl border border-white/15 bg-white/5 p-3">
+      <Music2 className="size-6 shrink-0 text-gold" aria-hidden />
+      <div className="min-w-0 flex-1 text-sm">
+        <p className="font-semibold">Muziek</p>
+        <p className="truncate text-white/75">
+          {source === "spotify" ? (
+            <>
+              {playlist?.name}
+              {status === "ready" ? ` · ${songs.length} nummers` : ""}
+              {status === "loading" ? " · ophalen…" : ""}
+              {status === "error" ? " · mislukt" : ""}
+            </>
+          ) : (
+            "Voorbeeldnummers, zonder geluid"
+          )}
+        </p>
+      </div>
+      <button type="button" onClick={onMusic} className={SECONDARY_BUTTON}>
+        {source === "spotify" ? "Wijzigen" : "Spotify koppelen"}
+      </button>
+    </div>
+  );
+}
+
 export function Home({
   onLocal,
   onHost,
   onJoin,
+  onMusic,
+  notice,
 }: {
   onLocal: () => void;
   onHost: () => void;
   onJoin: () => void;
+  onMusic: () => void;
+  notice?: string | null;
 }) {
   const error = useSession((s) => s.error);
   return (
@@ -57,6 +90,11 @@ export function Home({
         tijdlijn. Hoe wil je spelen?
       </p>
 
+      {notice ? (
+        <output className="mb-4 block rounded-xl bg-white/10 px-4 py-3 text-sm font-semibold">
+          {notice}
+        </output>
+      ) : null}
       {error ? (
         <p
           role="alert"
@@ -65,6 +103,8 @@ export function Home({
           {error}
         </p>
       ) : null}
+
+      <MusicRow onMusic={onMusic} />
 
       <div className="space-y-3">
         <Option

@@ -5,6 +5,8 @@ import { useEffect, useState } from "react";
 import { z } from "zod";
 import { OFFICIAL_TARGET, START_TOKENS } from "@/game/rules";
 import { useGameStore } from "@/game/store";
+import { usePrepare } from "@/spotify/usePrepare";
+import { MusicSummary, musicBlock, PrepareStatus } from "./MusicSummary";
 import {
   Choice,
   FieldLabel,
@@ -40,6 +42,8 @@ export function validateNames(names: string[]): (string | undefined)[] {
 /** Opzet voor één gedeeld apparaat. */
 export function Setup({ onBack }: { onBack: () => void }) {
   const start = useGameStore((s) => s.start);
+  const { prepare, progress, skipCheck, afterStart } = usePrepare();
+  const [startError, setStartError] = useState<string | null>(null);
   const [count, setCount] = useState(2);
   const [target, setTarget] = useState(5);
   const [tokens, setTokens] = useState(true);
@@ -64,7 +68,7 @@ export function Setup({ onBack }: { onBack: () => void }) {
     }
   }, []);
 
-  function submit(e: React.FormEvent) {
+  async function submit(e: React.FormEvent) {
     e.preventDefault();
     const active = names.slice(0, count);
     const found = validateNames(active);
@@ -75,11 +79,22 @@ export function Setup({ onBack }: { onBack: () => void }) {
     } catch {
       // Opslaan mislukt: niet erg.
     }
+    const block = musicBlock();
+    if (block) {
+      setStartError(block);
+      return;
+    }
+    setStartError(null);
+    const prepared = await prepare(active.length);
+    if (!prepared) return;
     start(
       active.map((n) => n.trim()),
       target,
       tokens,
+      prepared.songs,
+      prepared.preShuffled,
     );
+    afterStart();
   }
 
   return (
@@ -190,9 +205,25 @@ export function Setup({ onBack }: { onBack: () => void }) {
           </div>
         </fieldset>
 
-        <button type="submit" className={PRIMARY_BUTTON}>
-          Start het spel
+        <div className="mb-4">
+          <MusicSummary />
+        </div>
+        {startError ? (
+          <p
+            role="alert"
+            className="mb-3 rounded-xl bg-red-950/80 px-4 py-3 text-sm font-semibold"
+          >
+            {startError}
+          </p>
+        ) : null}
+        <button
+          type="submit"
+          disabled={progress !== null}
+          className={PRIMARY_BUTTON}
+        >
+          {progress ? "Even geduld…" : "Start het spel"}
         </button>
+        <PrepareStatus progress={progress} onSkip={skipCheck} />
         <button
           type="button"
           onClick={onBack}
@@ -200,11 +231,6 @@ export function Setup({ onBack }: { onBack: () => void }) {
         >
           Annuleren
         </button>
-
-        <p className="mt-4 text-sm text-white/60">
-          Voorlopig met voorbeeldnummers. De Spotify-koppeling komt in de
-          volgende stap.
-        </p>
       </form>
     </Screen>
   );

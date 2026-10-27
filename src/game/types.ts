@@ -3,6 +3,12 @@ export type Song = {
   title: string;
   artist: string;
   year: number;
+  /** Spotify-link om het nummer af te spelen (alleen bij een Spotify-playlist). */
+  uri?: string;
+  /** Waar het jaartal vandaan komt, als het gecontroleerd is. */
+  yearSource?: "spotify" | "musicbrainz";
+  /** True zodra het jaartal is opgezocht, ook als er niets beters uitkwam. */
+  yearChecked?: boolean;
 };
 
 export type Player = {

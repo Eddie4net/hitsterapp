@@ -21,17 +21,21 @@ import {
   WifiOff,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import { Fragment, type ReactNode, useEffect, useRef, useState } from "react";
+import { Fragment, type ReactNode, useState } from "react";
 import { toast } from "sonner";
 import { BUY_COST, describeSlot, MAX_TOKENS } from "@/game/rules";
 import type { Result } from "@/game/types";
-import { playCue } from "@/lib/feedback";
+import { resultMessage } from "@/lib/messages";
 import { playerColor } from "@/lib/players";
+import { useTableEffects } from "@/lib/useTableEffects";
 import { useTilt } from "@/lib/useTilt";
 import type { GameView } from "@/net/useGameView";
-import { Ambient, type Pulse } from "./Ambient";
+import { useMusic } from "@/spotify/music";
+import { useHostMusic } from "@/spotify/useHostMusic";
+import { Ambient } from "./Ambient";
 import { FullscreenToggle } from "./FullscreenToggle";
 import { HitsterStamp } from "./HitsterStamp";
+import { MusicControls } from "./MusicControls";
 import { Chair, Plant } from "./Room";
 import { RulesButton } from "./RulesDialog";
 import { CardBack, CompactCard, SongCard, TokenCoin } from "./SongCard";
@@ -344,29 +348,17 @@ function Chairs() {
   );
 }
 
-function resultMessage(
-  result: Result,
-  players: { id: number; name: string }[],
-  activeId: number,
-): string {
-  const { song, winnerId } = result;
-  const where = `${song.title} komt uit ${song.year}.`;
-  if (winnerId === activeId) return `Goed! ${where}`;
-  const winner = players.find((p) => p.id === winnerId);
-  if (winner) return `${winner.name} steelt het kaartje! ${where}`;
-  return `Niemand had het goed. ${where}`;
-}
-
 export function Table({ view }: { view: GameView }) {
   const { state: g, me, act, exit, code, lost } = view;
   const player = g.players[g.active];
   const tilt = useTilt();
 
   const [dragging, setDragging] = useState(false);
-  const [stampName, setStampName] = useState<string | null>(null);
-  const [pulse, setPulse] = useState<Pulse>(null);
-  const [pulseKey, setPulseKey] = useState(0);
-  const [shuffling, setShuffling] = useState(false);
+  const { stampName, pulse, pulseKey, shuffling } = useTableEffects(view);
+  // Alleen het tafelscherm (of een gedeeld apparaat) speelt de muziek.
+  const musicSource = useMusic((s) => s.source);
+  const musicActive = me === null && musicSource === "spotify";
+  useHostMusic(musicActive, g.currentId, g.phase === "finished");
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -393,122 +385,6 @@ export function Table({ view }: { view: GameView }) {
   const winner = g.players.find((p) => p.id === g.winnerId);
   const lastCard =
     g.players.some((p) => p.timeline.length >= g.target) || g.deckCount === 0;
-
-  // Bij een nieuw spel: de stapel wordt geschud. Alleen bij het openen van de tafel.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: bewust eenmalig
-  useEffect(() => {
-    const fresh =
-      g.phase === "placing" && g.players.every((p) => p.timeline.length === 1);
-    if (!fresh) return;
-    setShuffling(true);
-    playCue("shuffle");
-    const t = setTimeout(() => setShuffling(false), 1000);
-    return () => clearTimeout(t);
-  }, []);
-
-  // Het scherm blijft aan tijdens het spel.
-  useEffect(() => {
-    let lock: WakeLockSentinel | null = null;
-    const request = async () => {
-      try {
-        lock = (await navigator.wakeLock?.request("screen")) ?? null;
-      } catch {
-        // Niet elk apparaat staat dit toe; het spel werkt ook zonder.
-      }
-    };
-    void request();
-    const onVisible = () => {
-      if (document.visibilityState === "visible") void request();
-    };
-    document.addEventListener("visibilitychange", onVisible);
-    return () => {
-      document.removeEventListener("visibilitychange", onVisible);
-      void lock?.release();
-    };
-  }, []);
-
-  // Uitkomst: kaartje draait om, licht flitst, geluid en melding.
-  const resultKey = g.result?.song.id ?? null;
-  // biome-ignore lint/correctness/useExhaustiveDependencies: bewust alleen bij een nieuw resultaat
-  useEffect(() => {
-    const r = g.result;
-    if (!r) return;
-    const activeId = g.players[g.active].id;
-    const message = resultMessage(r, g.players, activeId);
-    const outcome: Exclude<Pulse, null> =
-      r.winnerId === activeId ? "good" : r.winnerId !== null ? "steal" : "bad";
-    playCue("flip");
-    setPulse(outcome);
-    setPulseKey((k) => k + 1);
-    const t = setTimeout(() => {
-      if (outcome === "bad") toast.error(message);
-      else toast.success(message);
-      playCue(
-        outcome === "good"
-          ? "correct"
-          : outcome === "steal"
-            ? "steal"
-            : "wrong",
-      );
-    }, 450);
-    return () => clearTimeout(t);
-  }, [resultKey]);
-
-  // Iemand roept HITSTER!: grote stempel op elk apparaat.
-  const wasStealing = useRef(false);
-  useEffect(() => {
-    if (g.stealing && !wasStealing.current) {
-      const name = g.players.find((p) => p.id === g.stealQueue[0])?.name;
-      if (name) {
-        setStampName(name);
-        playCue("hitster");
-      }
-    }
-    wasStealing.current = g.stealing;
-  }, [g.stealing, g.players, g.stealQueue]);
-  useEffect(() => {
-    if (!stampName) return;
-    const t = setTimeout(() => setStampName(null), 1300);
-    return () => clearTimeout(t);
-  }, [stampName]);
-
-  // Munten rinkelen als er tokens veranderen.
-  const tokenSignature = g.players.map((p) => p.tokens).join(",");
-  const previousTokens = useRef(tokenSignature);
-  useEffect(() => {
-    if (previousTokens.current !== tokenSignature) playCue("coin");
-    previousTokens.current = tokenSignature;
-  }, [tokenSignature]);
-
-  // Winnaar: fanfare en confetti.
-  useEffect(() => {
-    if (g.phase !== "finished") return;
-    playCue("win");
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    void import("@tsparticles/confetti").then(({ confetti }) => {
-      void confetti({ particleCount: 140, spread: 90, origin: { y: 0.6 } });
-      setTimeout(
-        () =>
-          void confetti({
-            particleCount: 90,
-            angle: 60,
-            spread: 70,
-            origin: { x: 0, y: 0.7 },
-          }),
-        250,
-      );
-      setTimeout(
-        () =>
-          void confetti({
-            particleCount: 90,
-            angle: 120,
-            spread: 70,
-            origin: { x: 1, y: 0.7 },
-          }),
-        450,
-      );
-    });
-  }, [g.phase]);
 
   function handleBuy(playerId: number) {
     act({ type: "buy", playerId });
@@ -616,6 +492,8 @@ export function Table({ view }: { view: GameView }) {
                     <FlipCard key={g.result.song.id} result={g.result} />
                   ) : null}
                 </Deck>
+
+                {musicActive ? <MusicControls /> : null}
 
                 <div
                   className="flex min-h-12 flex-col items-center gap-3 text-center"

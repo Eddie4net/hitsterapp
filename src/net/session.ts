@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { useGameStore } from "@/game/store";
+import type { Song } from "@/game/types";
 import { applyPlayerIntent } from "./intents";
 import { type Presence, toPublicState } from "./publicState";
 import { createTransport, type Transport } from "./transport";
@@ -44,7 +45,7 @@ type SessionState = {
   addLocalPlayer: (name: string) => void;
   removeSeat: (id: number) => void;
   setSettings: (target: number, tokensEnabled: boolean) => void;
-  startHostedGame: () => void;
+  startHostedGame: (songs?: Song[], preShuffled?: boolean) => void;
   join: (code: string, name: string) => Promise<void>;
   sendIntent: (intent: Intent) => void;
   leave: () => void;
@@ -305,13 +306,15 @@ export const useSession = create<SessionState>((set, get) => {
       broadcastLobby();
     },
 
-    startHostedGame: () => {
+    startHostedGame: (songs, preShuffled) => {
       const { seats, target, tokensEnabled, started } = get();
       if (started || seats.length < 2) return;
       useGameStore.getState().start(
         seats.map((s) => s.name),
         target,
         tokensEnabled,
+        songs,
+        preShuffled,
       );
       set({ started: true });
       unsubGame?.();

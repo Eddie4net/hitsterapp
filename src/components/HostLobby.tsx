@@ -14,6 +14,8 @@ import { playerColor } from "@/lib/players";
 import { useSession } from "@/net/session";
 import { hasRealtimeServer } from "@/net/transport";
 import { MAX_PLAYERS } from "@/net/types";
+import { usePrepare } from "@/spotify/usePrepare";
+import { MusicSummary, musicBlock, PrepareStatus } from "./MusicSummary";
 import {
   Choice,
   FieldLabel,
@@ -77,6 +79,8 @@ export function HostLobby() {
     leave,
   } = useSession();
   const url = useJoinUrl(code);
+  const { prepare, progress, skipCheck, afterStart } = usePrepare();
+  const [startError, setStartError] = useState<string | null>(null);
   const [localName, setLocalName] = useState("");
   const [copied, setCopied] = useState(false);
   const isLocalhost =
@@ -245,14 +249,36 @@ export function HostLobby() {
               </div>
             </fieldset>
 
+            <MusicSummary />
+            {startError ? (
+              <p
+                role="alert"
+                className="rounded-xl bg-red-950/80 px-4 py-3 text-sm font-semibold"
+              >
+                {startError}
+              </p>
+            ) : null}
             <button
               type="button"
-              onClick={startHostedGame}
-              disabled={seats.length < 2}
+              onClick={async () => {
+                const block = musicBlock();
+                if (block) return setStartError(block);
+                setStartError(null);
+                const prepared = await prepare(seats.length);
+                if (!prepared) return;
+                startHostedGame(prepared.songs, prepared.preShuffled);
+                afterStart();
+              }}
+              disabled={seats.length < 2 || progress !== null}
               className={PRIMARY_BUTTON}
             >
-              {seats.length < 2 ? "Minimaal 2 spelers nodig" : "Start het spel"}
+              {seats.length < 2
+                ? "Minimaal 2 spelers nodig"
+                : progress
+                  ? "Even geduld…"
+                  : "Start het spel"}
             </button>
+            <PrepareStatus progress={progress} onSkip={skipCheck} />
           </div>
         </div>
       )}

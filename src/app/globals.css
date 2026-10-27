@@ -1,0 +1,30 @@
+@import "tailwindcss";
+
+:root {
+  --background: #0b1210;
+  --foreground: #f3efe4;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-felt: #0e3b2c;
+  --color-felt-dark: #082a1f;
+  --color-wood: #4a2e17;
+  --color-wood-light: #7a4e27;
+  --color-gold: #f4c24d;
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+}
+
+/* Houd de focusring altijd zichtbaar (toegankelijkheid). */
+:focus-visible {
+  outline: 3px solid var(--color-gold);
+  outline-offset: 3px;
+}

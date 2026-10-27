@@ -1,7 +1,14 @@
-import type { Song } from "./types";
+import type { Placement, Song } from "./types";
 
 /** Officiële Hitster: wie als eerste 10 kaartjes in de tijdlijn heeft, wint. */
 export const OFFICIAL_TARGET = 10;
+
+/**
+ * Tokens. Deze aantallen staan hier op één plek zodat je ze makkelijk kunt
+ * aanpassen aan jouw versie van het bordspel.
+ */
+export const START_TOKENS = 2;
+export const MAX_TOKENS = 5;
 
 /**
  * Staat het kaartje goed als het op positie `index` in de tijdlijn komt?
@@ -49,4 +56,30 @@ export function describeSlot(timeline: Song[], index: number): string {
   if (after) return `vóór ${after.year}`;
   if (before) return `na ${before.year}`;
   return "als eerste kaartje";
+}
+
+/** Zet een kaartje op de plek waar het op jaar hoort (voor een gestolen kaartje). */
+export function insertSorted(timeline: Song[], song: Song): Song[] {
+  const found = timeline.findIndex((s) => s.year > song.year);
+  return insertAt(timeline, found === -1 ? timeline.length : found, song);
+}
+
+/**
+ * Wie krijgt het kaartje? `placements[0]` is de speler aan de beurt, de rest
+ * zijn stelpogingen in volgorde. Had de speler aan de beurt het goed, dan houdt
+ * die het kaartje. Anders krijgt de eerste stelende speler met een goede plek het.
+ */
+export function resolveRound(
+  song: Song,
+  activeTimeline: Song[],
+  placements: Placement[],
+): { winnerId: number | null; activeCorrect: boolean } {
+  const [first, ...stealers] = placements;
+  if (isPlacementCorrect(activeTimeline, first.index, song)) {
+    return { winnerId: first.playerId, activeCorrect: true };
+  }
+  const stealer = stealers.find((p) =>
+    isPlacementCorrect(activeTimeline, p.index, song),
+  );
+  return { winnerId: stealer?.playerId ?? null, activeCorrect: false };
 }

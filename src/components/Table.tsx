@@ -11,14 +11,16 @@ import {
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
-import { ArrowRight, Plus, RotateCcw, Trophy } from "lucide-react";
+import { ArrowRight, Plus, RotateCcw, SkipForward, Trophy } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { Fragment, useEffect } from "react";
 import { toast } from "sonner";
-import { describeSlot } from "@/game/rules";
+import { describeSlot, MAX_TOKENS } from "@/game/rules";
 import { useGameStore } from "@/game/store";
-import type { Song } from "@/game/types";
+import type { Result } from "@/game/types";
+import { playCue } from "@/lib/feedback";
 import { CardBack, SongCard } from "./SongCard";
+import { SoundToggle } from "./SoundToggle";
 
 function Slot({
   index,
@@ -47,9 +49,24 @@ function Slot({
   );
 }
 
-function MysteryCard() {
+/** Toont dat iemand al voor deze plek heeft gekozen (zonder het jaar te verklappen). */
+function TakenMarker({ name }: { name: string }) {
+  return (
+    <div
+      role="img"
+      aria-label={`${name} legde het kaartje hier`}
+      className="flex h-36 w-10 shrink-0 flex-col items-center justify-center gap-1 rounded-xl bg-gold/20 text-gold ring-1 ring-gold/60 sm:h-44"
+    >
+      <span className="text-lg font-black" aria-hidden>
+        {name.slice(0, 1).toUpperCase()}
+      </span>
+    </div>
+  );
+}
+
+function MysteryCard({ disabled }: { disabled: boolean }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } =
-    useDraggable({ id: "mystery" });
+    useDraggable({ id: "mystery", disabled });
   return (
     <button
       type="button"
@@ -62,7 +79,7 @@ function MysteryCard() {
           ? { transform: `translate3d(${transform.x}px, ${transform.y}px, 0)` }
           : undefined
       }
-      className={`relative touch-none cursor-grab active:cursor-grabbing ${
+      className={`relative touch-none ${disabled ? "cursor-default" : "cursor-grab active:cursor-grabbing"} ${
         isDragging ? "z-50 scale-105 rotate-3" : ""
       }`}
     >
@@ -87,7 +104,7 @@ function Scoreboard() {
                 : "bg-white/10 text-white ring-1 ring-white/20"
             }`}
           >
-            {p.name} · {p.timeline.length}/{target}
+            {p.name} · {p.timeline.length}/{target} · {p.tokens} tokens
           </li>
         );
       })}
@@ -104,12 +121,25 @@ function OtherTimelines() {
         <p key={p.id}>
           <span className="font-semibold text-white">{p.name}:</span>{" "}
           <span className="tabular-nums">
-            {p.timeline.map((s: Song) => s.year).join(" · ")}
+            {p.timeline.map((s) => s.year).join(" · ")}
           </span>
         </p>
       ))}
     </div>
   );
+}
+
+function resultMessage(
+  result: Result,
+  players: { id: number; name: string }[],
+  activeId: number,
+): string {
+  const { song, winnerId } = result;
+  const where = `${song.title} komt uit ${song.year}.`;
+  if (winnerId === activeId) return `Goed! ${where}`;
+  const winner = players.find((p) => p.id === winnerId);
+  if (winner) return `${winner.name} steelt het kaartje! ${where}`;
+  return `Niemand had het goed. ${where}`;
 }
 
 export function Table() {
@@ -122,7 +152,16 @@ export function Table() {
     result,
     winnerId,
     target,
+    placements,
+    stealQueue,
+    stealing,
+    bonusClaimed,
     place,
+    stealAt,
+    beginSteal,
+    pass,
+    skip,
+    claimBonus,
     next,
     reset,
   } = useGameStore();
@@ -135,26 +174,46 @@ export function Table() {
     useSensor(KeyboardSensor),
   );
 
-  // Laat altijd zien wat er gebeurde: goed of fout.
+  const player = players[active];
+  const placing = phase === "placing";
+  const stealer =
+    phase === "steal" ? players.find((p) => p.id === stealQueue[0]) : undefined;
+  const showSlots = placing || (phase === "steal" && stealing);
+  const onSlot = placing ? place : stealAt;
+  const taken = new Map(placements.map((p) => [p.index, p.playerId]));
+
+  // Laat altijd zien wat er gebeurde, met geluid en tekst. Alleen bij een
+  // nieuw resultaat, niet bij elke wijziging van de spelers.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: bewust alleen `result`
   useEffect(() => {
     if (!result) return;
-    if (result.correct) {
-      toast.success(`Goed! ${result.song.title} komt uit ${result.song.year}.`);
+    const message = resultMessage(result, players, player.id);
+    if (result.winnerId === player.id) {
+      toast.success(message);
+      playCue("correct");
+    } else if (result.winnerId !== null) {
+      toast.success(message);
+      playCue("steal");
     } else {
-      toast.error(`Helaas. ${result.song.title} komt uit ${result.song.year}.`);
+      toast.error(message);
+      playCue("wrong");
     }
   }, [result]);
 
+  const winner = players.find((p) => p.id === winnerId);
+  useEffect(() => {
+    if (phase === "finished") playCue("win");
+  }, [phase]);
+
   function handleDragEnd(event: DragEndEvent) {
     const id = event.over?.id;
-    if (typeof id === "string" && id.startsWith("slot-")) {
-      place(Number(id.replace("slot-", "")));
+    if (showSlots && typeof id === "string" && id.startsWith("slot-")) {
+      onSlot(Number(id.replace("slot-", "")));
     }
   }
 
-  const player = players[active];
-  const winner = players.find((p) => p.id === winnerId);
-  const placing = phase === "placing";
+  const lastCard =
+    players.some((p) => p.timeline.length >= target) || deck.length === 0;
 
   return (
     <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
@@ -162,14 +221,17 @@ export function Table() {
         <header className="flex w-full max-w-5xl flex-col items-center gap-3">
           <div className="flex w-full items-center justify-between">
             <h1 className="text-xl font-black tracking-tight">Hitsterapp</h1>
-            <button
-              type="button"
-              onClick={reset}
-              className="flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm text-white/80 hover:bg-white/10"
-            >
-              <RotateCcw className="size-4" aria-hidden />
-              Stoppen
-            </button>
+            <div className="flex items-center gap-1">
+              <SoundToggle />
+              <button
+                type="button"
+                onClick={reset}
+                className="flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm text-white/80 hover:bg-white/10"
+              >
+                <RotateCcw className="size-4" aria-hidden />
+                Stoppen
+              </button>
+            </div>
           </div>
           <Scoreboard />
         </header>
@@ -194,7 +256,7 @@ export function Table() {
 
               <div className="relative">
                 <AnimatePresence mode="wait">
-                  {placing && current ? (
+                  {(placing || phase === "steal") && current ? (
                     <motion.div
                       key={current.id}
                       initial={{ y: -60, x: -80, rotate: -10, opacity: 0 }}
@@ -206,7 +268,7 @@ export function Table() {
                         damping: 18,
                       }}
                     >
-                      <MysteryCard />
+                      <MysteryCard disabled={!showSlots} />
                     </motion.div>
                   ) : null}
                   {phase === "reveal" && result ? (
@@ -216,36 +278,106 @@ export function Table() {
                       animate={{ rotateY: 0, opacity: 1 }}
                       transition={{ duration: 0.4, ease: "easeOut" }}
                       style={{ perspective: 800 }}
-                      className={result.correct ? "" : "opacity-80 grayscale"}
+                      className={
+                        result.winnerId === null ? "opacity-80 grayscale" : ""
+                      }
                     >
-                      <SongCard song={result.song} highlight={result.correct} />
+                      <SongCard
+                        song={result.song}
+                        highlight={result.winnerId !== null}
+                      />
                     </motion.div>
                   ) : null}
                 </AnimatePresence>
               </div>
             </div>
 
-            <div className="min-h-12 text-center" aria-live="polite">
+            <div
+              className="flex min-h-12 flex-col items-center gap-3 text-center"
+              aria-live="polite"
+            >
               {placing ? (
-                <p className="font-semibold">
-                  {player.name}, waar hoort dit nummer?
-                  <span className="block text-sm font-normal text-white/70">
-                    Sleep het kaartje naar de tijdlijn of tik op een plus-knop.
-                    ({deck.length + 1} kaartjes in de stapel)
-                  </span>
-                </p>
+                <>
+                  <p className="font-semibold">
+                    {player.name}, waar hoort dit nummer?
+                    <span className="block text-sm font-normal text-white/70">
+                      Sleep het kaartje naar de tijdlijn of tik op een
+                      plus-knop. ({deck.length + 1} kaartjes in de stapel)
+                    </span>
+                  </p>
+                  <button
+                    type="button"
+                    onClick={skip}
+                    disabled={player.tokens < 1 || deck.length === 0}
+                    className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-white/30 px-4 text-sm font-semibold hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    <SkipForward className="size-4" aria-hidden />
+                    Ander nummer (1 token)
+                  </button>
+                </>
               ) : null}
+
+              {stealer ? (
+                <div className="flex flex-col items-center gap-3">
+                  <p className="font-semibold">
+                    {stealer.name}, wil je stelen?
+                    <span className="block text-sm font-normal text-white/70">
+                      Kost 1 token. Je kiest een andere plek. Heeft{" "}
+                      {player.name} het fout, dan krijg jij het kaartje als jouw
+                      plek klopt.
+                    </span>
+                  </p>
+                  {stealing ? (
+                    <p className="text-sm text-gold">
+                      Kies nu een plek in de tijdlijn van {player.name}.
+                    </p>
+                  ) : (
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={beginSteal}
+                        className="min-h-11 rounded-xl bg-gold px-5 font-bold text-black hover:brightness-110"
+                      >
+                        Steel (1 token)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={pass}
+                        className="min-h-11 rounded-xl border border-white/30 px-5 font-semibold hover:bg-white/10"
+                      >
+                        Pas
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ) : null}
+
               {phase === "reveal" && result ? (
-                <button
-                  type="button"
-                  onClick={next}
-                  className="inline-flex min-h-12 items-center gap-2 rounded-xl bg-gold px-6 py-2 font-bold text-black hover:brightness-110"
-                >
-                  {player.timeline.length >= target
-                    ? "Bekijk de uitslag"
-                    : "Volgende beurt"}
-                  <ArrowRight className="size-5" aria-hidden />
-                </button>
+                <>
+                  <p className="font-semibold">
+                    {resultMessage(result, players, player.id)}
+                  </p>
+                  <div className="flex flex-wrap items-center justify-center gap-2">
+                    <button
+                      type="button"
+                      onClick={claimBonus}
+                      disabled={bonusClaimed || player.tokens >= MAX_TOKENS}
+                      className="min-h-11 rounded-xl border border-white/30 px-4 text-sm font-semibold hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      {bonusClaimed
+                        ? "Token ontvangen"
+                        : "Artiest en titel goed geraden? +1 token"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={next}
+                      className="inline-flex min-h-12 items-center gap-2 rounded-xl bg-gold px-6 py-2 font-bold text-black hover:brightness-110"
+                    >
+                      {lastCard ? "Bekijk de uitslag" : "Volgende beurt"}
+                      <ArrowRight className="size-5" aria-hidden />
+                    </button>
+                  </div>
+                </>
               ) : null}
             </div>
           </div>
@@ -257,47 +389,52 @@ export function Table() {
             </p>
             <div className="w-full overflow-x-auto pb-3">
               <ul className="mx-auto flex w-max items-center gap-2 px-2">
-                {placing ? (
-                  <li>
-                    <Slot
-                      index={0}
-                      label={describeSlot(player.timeline, 0)}
-                      onPlace={place}
-                    />
-                  </li>
-                ) : null}
-                {player.timeline.map((song, i) => (
-                  <Fragment key={song.id}>
-                    <motion.li
-                      layout
-                      initial={{ scale: 0.6, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      transition={{
-                        type: "spring",
-                        stiffness: 220,
-                        damping: 20,
-                      }}
-                    >
-                      <SongCard
-                        song={song}
-                        highlight={
-                          phase === "reveal" &&
-                          result?.correct === true &&
-                          result.song.id === song.id
-                        }
-                      />
-                    </motion.li>
-                    {placing ? (
-                      <li>
-                        <Slot
-                          index={i + 1}
-                          label={describeSlot(player.timeline, i + 1)}
-                          onPlace={place}
-                        />
-                      </li>
-                    ) : null}
-                  </Fragment>
-                ))}
+                {Array.from({ length: player.timeline.length + 1 }, (_, i) => {
+                  const song = player.timeline[i];
+                  const takenBy = taken.get(i);
+                  const takenName =
+                    takenBy === undefined
+                      ? undefined
+                      : players.find((p) => p.id === takenBy)?.name;
+                  return (
+                    <Fragment key={song?.id ?? "end"}>
+                      {phase === "steal" && takenName ? (
+                        <li>
+                          <TakenMarker name={takenName} />
+                        </li>
+                      ) : showSlots ? (
+                        <li>
+                          <Slot
+                            index={i}
+                            label={describeSlot(player.timeline, i)}
+                            onPlace={onSlot}
+                          />
+                        </li>
+                      ) : null}
+                      {song ? (
+                        <motion.li
+                          layout
+                          initial={{ scale: 0.6, opacity: 0 }}
+                          animate={{ scale: 1, opacity: 1 }}
+                          transition={{
+                            type: "spring",
+                            stiffness: 220,
+                            damping: 20,
+                          }}
+                        >
+                          <SongCard
+                            song={song}
+                            highlight={
+                              phase === "reveal" &&
+                              result?.winnerId === player.id &&
+                              result.song.id === song.id
+                            }
+                          />
+                        </motion.li>
+                      ) : null}
+                    </Fragment>
+                  );
+                })}
               </ul>
             </div>
           </div>

@@ -3,7 +3,9 @@ import {
   describeSlot,
   hasWon,
   insertAt,
+  insertSorted,
   isPlacementCorrect,
+  resolveRound,
   shuffle,
 } from "./rules";
 import type { Song } from "./types";
@@ -70,5 +72,44 @@ describe("describeSlot", () => {
     expect(describeSlot(timeline, 0)).toBe("vóór 1970");
     expect(describeSlot(timeline, 1)).toBe("tussen 1970 en 1985");
     expect(describeSlot(timeline, 3)).toBe("na 2000");
+  });
+});
+
+describe("insertSorted", () => {
+  it("zet het kaartje op de plek van het jaar", () => {
+    expect(insertSorted(timeline, song(1990)).map((s) => s.year)).toEqual([
+      1970, 1985, 1990, 2000,
+    ]);
+    expect(insertSorted(timeline, song(2020)).at(-1)?.year).toBe(2020);
+    expect(insertSorted(timeline, song(1950))[0].year).toBe(1950);
+  });
+});
+
+describe("resolveRound", () => {
+  const target = song(1990); // hoort op index 2
+
+  it("laat de speler aan de beurt het kaartje houden als die het goed heeft", () => {
+    const result = resolveRound(target, timeline, [
+      { playerId: 0, index: 2 },
+      { playerId: 1, index: 1 },
+    ]);
+    expect(result).toEqual({ winnerId: 0, activeCorrect: true });
+  });
+
+  it("geeft het kaartje aan de eerste stelende speler met de goede plek", () => {
+    const result = resolveRound(target, timeline, [
+      { playerId: 0, index: 0 },
+      { playerId: 1, index: 1 },
+      { playerId: 2, index: 2 },
+    ]);
+    expect(result).toEqual({ winnerId: 2, activeCorrect: false });
+  });
+
+  it("geeft niemand het kaartje als iedereen het fout heeft", () => {
+    const result = resolveRound(target, timeline, [
+      { playerId: 0, index: 0 },
+      { playerId: 1, index: 3 },
+    ]);
+    expect(result).toEqual({ winnerId: null, activeCorrect: false });
   });
 });

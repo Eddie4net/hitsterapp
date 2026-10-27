@@ -1,9 +1,25 @@
-import { Disc3 } from "lucide-react";
 import type { Song } from "@/game/types";
 
-const SIZE = "h-36 w-28 sm:h-44 sm:w-32";
+/** Vierkante kaartjes, zoals bij het bordspel. */
+const SIZE = "size-32 sm:size-40";
 
-/** Kaartje met het jaar groot in beeld; de kleur hangt af van het jaar. */
+/** Felle kleuren per decennium; tekstkleur gekozen voor genoeg contrast. */
+const PALETTE = [
+  { bg: "#FF4D8D", fg: "#111111" },
+  { bg: "#2DC4D9", fg: "#111111" },
+  { bg: "#FFD23F", fg: "#111111" },
+  { bg: "#FF8A3D", fg: "#111111" },
+  { bg: "#7C3AED", fg: "#FFFFFF" },
+  { bg: "#A3E635", fg: "#111111" },
+  { bg: "#2563EB", fg: "#FFFFFF" },
+  { bg: "#E11D48", fg: "#FFFFFF" },
+];
+
+function paletteFor(year: number) {
+  return PALETTE[Math.floor(year / 10) % PALETTE.length];
+}
+
+/** Voorkant: artiest bovenaan, jaar groot in het midden, titel onderaan. */
 export function SongCard({
   song,
   highlight = false,
@@ -11,37 +27,59 @@ export function SongCard({
   song: Song;
   highlight?: boolean;
 }) {
-  const hue = (song.year * 7) % 360;
+  const { bg, fg } = paletteFor(song.year);
   return (
     <div
-      className={`${SIZE} flex shrink-0 flex-col justify-between rounded-xl p-3 text-white shadow-lg ring-2 ${
-        highlight ? "ring-gold" : "ring-white/20"
+      className={`${SIZE} relative flex shrink-0 flex-col justify-between overflow-hidden rounded-lg p-3 shadow-[0_8px_16px_rgba(0,0,0,0.45)] ${
+        highlight ? "ring-4 ring-white" : "ring-1 ring-black/30"
       }`}
-      style={{
-        background: `linear-gradient(145deg, hsl(${hue} 65% 30%), hsl(${(hue + 40) % 360} 65% 20%))`,
-      }}
+      style={{ backgroundColor: bg, color: fg }}
     >
-      <p className="text-3xl font-black leading-none tabular-nums sm:text-4xl">
+      <span
+        aria-hidden
+        className="absolute -right-8 -bottom-8 size-24 rounded-full bg-white/20"
+      />
+      <span
+        aria-hidden
+        className="absolute -top-6 -left-6 size-16 rounded-full bg-black/10"
+      />
+      <p className="relative line-clamp-2 text-[11px] font-extrabold uppercase leading-tight tracking-wide sm:text-xs">
+        {song.artist}
+      </p>
+      <p className="relative text-center text-4xl font-black leading-none tabular-nums sm:text-5xl">
         {song.year}
       </p>
-      <div>
-        <p className="line-clamp-2 text-sm font-bold leading-tight">
-          {song.title}
-        </p>
-        <p className="mt-1 line-clamp-2 text-xs text-white/85">{song.artist}</p>
-      </div>
+      <p className="relative line-clamp-2 text-center text-xs font-semibold italic leading-tight">
+        {song.title}
+      </p>
     </div>
   );
 }
 
-/** Achterkant: het raadkaartje waarvan je het jaar nog niet weet. */
+/** Achterkant: een draaiende plaat; het jaar is nog geheim. */
 export function CardBack({ label }: { label?: string }) {
   return (
     <div
-      className={`${SIZE} flex shrink-0 flex-col items-center justify-center gap-2 rounded-xl bg-[repeating-linear-gradient(45deg,#1b1b1b,#1b1b1b_8px,#242424_8px,#242424_16px)] text-gold shadow-lg ring-2 ring-gold/60`}
+      className={`${SIZE} relative flex shrink-0 items-center justify-center overflow-hidden rounded-lg bg-black shadow-[0_8px_16px_rgba(0,0,0,0.45)] ring-1 ring-black/40`}
     >
-      <Disc3 className="size-12" aria-hidden />
-      {label ? <p className="text-sm font-bold">{label}</p> : null}
+      <span
+        aria-hidden
+        className="absolute inset-3 rounded-full"
+        style={{
+          background:
+            "conic-gradient(from 20deg, #FF4D8D, #FFD23F, #2DC4D9, #7C3AED, #FF4D8D)",
+        }}
+      />
+      <span
+        aria-hidden
+        className="absolute inset-[30%] rounded-full bg-black"
+      />
+      <span aria-hidden className="absolute size-2 rounded-full bg-white/80" />
+      {label ? (
+        <p className="absolute inset-x-0 bottom-1 text-center text-xs font-bold text-white">
+          <span className="rounded bg-black/70 px-2 py-0.5">{label}</span>
+        </p>
+      ) : null}
     </div>
   );
 }

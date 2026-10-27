@@ -80,11 +80,11 @@ export function Setup() {
   }
 
   return (
-    <main className="flex flex-1 items-center justify-center bg-[radial-gradient(ellipse_at_top,#14503c,#0b1210_70%)] p-4">
+    <main className="flex flex-1 items-center justify-center floor p-4">
       <form
         onSubmit={submit}
         noValidate
-        className="w-full max-w-md rounded-3xl border border-white/10 bg-black/40 p-6 shadow-2xl backdrop-blur sm:p-8"
+        className="w-full max-w-md rounded-3xl border border-white/10 bg-stone-950/90 p-6 shadow-2xl backdrop-blur sm:p-8"
       >
         <div className="mb-6 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">

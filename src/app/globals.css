@@ -28,3 +28,63 @@ body {
   outline: 3px solid var(--color-gold);
   outline-offset: 3px;
 }
+
+/* Woonkamer van bovenaf: eikenhouten vloer, vloerkleed, houten tafel, stoelen. */
+.floor {
+  background-color: #c9a97f;
+  background-image:
+    radial-gradient(
+      ellipse at 50% 35%,
+      rgba(255, 240, 210, 0.28),
+      rgba(0, 0, 0, 0.38) 100%
+    ),
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='700' height='300'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.004 0.07' numOctaves='3' seed='7'/><feColorMatrix values='0 0 0 0 0.3 0 0 0 0 0.17 0 0 0 0 0.07 0 0 0 0.5 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"),
+    repeating-linear-gradient(
+      90deg,
+      rgba(0, 0, 0, 0.12) 0 2px,
+      transparent 2px 150px
+    );
+}
+
+.rug {
+  background-color: #dcd6c8;
+  background-image:
+    repeating-linear-gradient(
+      45deg,
+      rgba(0, 0, 0, 0.035) 0 3px,
+      transparent 3px 7px
+    ),
+    repeating-linear-gradient(
+      -45deg,
+      rgba(255, 255, 255, 0.05) 0 3px,
+      transparent 3px 7px
+    );
+  box-shadow:
+    inset 0 0 0 10px #dcd6c8,
+    inset 0 0 0 12px #b5ad9a,
+    inset 0 0 0 20px #dcd6c8,
+    0 14px 40px rgba(0, 0, 0, 0.35);
+}
+
+.wood-top {
+  background-color: #a8744a;
+  background-image:
+    linear-gradient(
+      100deg,
+      rgba(255, 220, 170, 0.18),
+      transparent 40%,
+      rgba(0, 0, 0, 0.12) 85%
+    ),
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='900' height='400'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.003 0.12' numOctaves='4' seed='3'/><feColorMatrix values='0 0 0 0 0.22 0 0 0 0 0.1 0 0 0 0 0.03 0 0 0 0.7 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  box-shadow:
+    inset 0 0 0 3px rgba(255, 225, 180, 0.35),
+    inset 0 0 90px rgba(60, 25, 5, 0.35),
+    0 34px 50px rgba(0, 0, 0, 0.45);
+}
+
+.chair {
+  background: #2a2a2d;
+  box-shadow:
+    inset 0 3px 0 rgba(255, 255, 255, 0.12),
+    0 8px 14px rgba(0, 0, 0, 0.35);
+}

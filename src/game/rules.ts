@@ -10,6 +10,9 @@ export const OFFICIAL_TARGET = 10;
 export const START_TOKENS = 2;
 export const MAX_TOKENS = 5;
 
+/** Officieel: 3 tokens inwisselen voor een kaartje uit de stapel, direct in je tijdlijn. */
+export const BUY_COST = 3;
+
 /**
  * Staat het kaartje goed als het op positie `index` in de tijdlijn komt?
  * Hetzelfde jaar als een buurkaartje telt als goed.
@@ -82,4 +85,13 @@ export function resolveRound(
     isPlacementCorrect(activeTimeline, p.index, song),
   );
   return { winnerId: stealer?.playerId ?? null, activeCorrect: false };
+}
+
+/** Wie begint? De speler met het oudste kaartje (bij gelijk jaar de eerste in de rij). */
+export function pickStarter(startCards: Song[]): number {
+  let best = 0;
+  startCards.forEach((card, i) => {
+    if (card.year < startCards[best].year) best = i;
+  });
+  return best;
 }

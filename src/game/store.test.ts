@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { MAX_TOKENS, START_TOKENS } from "./rules";
+import { BUY_COST, MAX_TOKENS, pickStarter, START_TOKENS } from "./rules";
 import { useGameStore } from "./store";
 import type { Song } from "./types";
 
@@ -26,6 +26,7 @@ function setup(tokens = [START_TOKENS, START_TOKENS, START_TOKENS]) {
     result: null,
     winnerId: null,
     target: 10,
+    tokensEnabled: true,
     placements: [],
     stealQueue: [],
     stealing: false,
@@ -88,5 +89,51 @@ describe("spelverloop met tokens", () => {
     s().claimBonus();
     s().claimBonus();
     expect(s().players[0].tokens).toBe(MAX_TOKENS);
+  });
+});
+
+describe("officiële extra regels", () => {
+  beforeEach(() => setup([BUY_COST, 0, 0]));
+
+  it("wisselt 3 tokens in voor een kaartje uit de stapel, direct in de tijdlijn", () => {
+    s().buy(0);
+    expect(s().players[0].tokens).toBe(0);
+    expect(s().players[0].timeline.map((x) => x.year)).toContain(1960);
+    expect(s().deck).toHaveLength(1);
+  });
+
+  it("laat kopen niet toe met te weinig tokens", () => {
+    s().buy(1);
+    expect(s().players[1].timeline).toHaveLength(2);
+    expect(s().deck).toHaveLength(2);
+  });
+
+  it("laat kopen ook toe in de beurt van een ander", () => {
+    useGameStore.setState({ active: 1 });
+    s().buy(0);
+    expect(s().players[0].timeline).toHaveLength(3);
+  });
+
+  it("wint direct als je door te kopen het doel haalt", () => {
+    useGameStore.setState({ target: 3 });
+    s().buy(0);
+    expect(s().phase).toBe("finished");
+    expect(s().winnerId).toBe(0);
+  });
+
+  it("gebruikt geen tokens als die uitstaan", () => {
+    useGameStore.setState({ tokensEnabled: false });
+    s().buy(0);
+    s().skip();
+    expect(s().players[0].tokens).toBe(BUY_COST);
+    s().place(1);
+    expect(s().phase).toBe("reveal");
+  });
+});
+
+describe("pickStarter", () => {
+  it("kiest de speler met het oudste kaartje", () => {
+    expect(pickStarter([song(1990), song(1965), song(2001)])).toBe(1);
+    expect(pickStarter([song(1980), song(1980)])).toBe(0);
   });
 });

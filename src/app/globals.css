@@ -18,6 +18,10 @@
 }
 
 body {
+  /* Geen terugveren of pull-to-refresh tijdens het slepen van kaartjes, en geen vertraging bij tikken. */
+  overscroll-behavior: none;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-geist-sans), system-ui, sans-serif;
@@ -111,4 +115,37 @@ body {
     inset 0 0 70px rgba(90, 50, 10, 0.22),
     14px 26px 46px rgba(0, 0, 0, 0.42),
     4px 8px 10px rgba(0, 0, 0, 0.25);
+}
+
+/* Stofjes die langzaam door het licht drijven. */
+@keyframes dust-drift {
+  0% {
+    transform: translate(0, 0);
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.8;
+  }
+  50% {
+    transform: translate(24px, -40px);
+    opacity: 0.35;
+  }
+  85% {
+    opacity: 0.7;
+  }
+  100% {
+    transform: translate(-10px, -90px);
+    opacity: 0;
+  }
+}
+.dust {
+  animation: dust-drift linear infinite;
+}
+
+/* Wie minder beweging wil, krijgt geen zwevende stofjes. */
+@media (prefers-reduced-motion: reduce) {
+  .dust {
+    animation: none;
+    opacity: 0;
+  }
 }

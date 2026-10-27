@@ -13,13 +13,14 @@ import {
 } from "@dnd-kit/core";
 import { ArrowRight, Plus, RotateCcw, SkipForward, Trophy } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import { Fragment, useEffect } from "react";
+import { Fragment, type ReactNode, useEffect } from "react";
 import { toast } from "sonner";
 import { describeSlot, MAX_TOKENS } from "@/game/rules";
 import { useGameStore } from "@/game/store";
 import type { Result } from "@/game/types";
 import { playCue } from "@/lib/feedback";
-import { CardBack, SongCard, TokenCoin } from "./SongCard";
+import { Chair, Plant } from "./Room";
+import { CardBack, CompactCard, SongCard, TokenCoin } from "./SongCard";
 import { SoundToggle } from "./SoundToggle";
 
 const SLOT_HEIGHT = "h-32 sm:h-40";
@@ -70,6 +71,7 @@ function TakenMarker({ name }: { name: string }) {
   );
 }
 
+/** Het bovenste kaartje van de stapel: sleepbaar zolang er een plek gekozen mag worden. */
 function MysteryCard({ disabled }: { disabled: boolean }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } =
     useDraggable({ id: "mystery", disabled });
@@ -91,6 +93,63 @@ function MysteryCard({ disabled }: { disabled: boolean }) {
     >
       <CardBack label="Welk jaar?" />
     </button>
+  );
+}
+
+/** Het bovenste kaartje draait om en laat artiest, titel en jaar zien. */
+function FlipCard({ result }: { result: Result }) {
+  return (
+    <motion.div
+      initial={{ rotateY: 180 }}
+      animate={{ rotateY: 0 }}
+      transition={{ duration: 0.55, ease: "easeOut" }}
+      style={{ transformStyle: "preserve-3d" }}
+      className="relative size-32 sm:size-40"
+    >
+      <div
+        style={{ backfaceVisibility: "hidden" }}
+        className={`absolute inset-0 ${result.winnerId === null ? "opacity-80 grayscale" : ""}`}
+      >
+        <SongCard song={result.song} highlight={result.winnerId !== null} />
+      </div>
+      <div
+        style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)" }}
+        className="absolute inset-0"
+      >
+        <CardBack />
+      </div>
+    </motion.div>
+  );
+}
+
+/** Eén stapel: onder het bovenste kaartje zie je de randen van de rest. */
+function Deck({
+  remaining,
+  children,
+}: {
+  remaining: number;
+  children: ReactNode;
+}) {
+  const layers = Math.min(6, Math.max(remaining, 0));
+  return (
+    <div
+      className="relative size-32 drop-shadow-[6px_12px_10px_rgba(0,0,0,0.4)] sm:size-40"
+      style={{ perspective: 900 }}
+    >
+      {Array.from({ length: layers }, (_, i) => (
+        <div
+          // biome-ignore lint/suspicious/noArrayIndexKey: vaste, identieke lagen
+          key={i}
+          aria-hidden
+          className="absolute inset-0 rounded-md bg-[#15131c] ring-1 ring-white/10"
+          style={{
+            transform: `translate(${(layers - i) * 1.6}px, ${(layers - i) * 1.9}px) rotate(${((i % 3) - 1) * 0.9}deg)`,
+            boxShadow: "0 1.5px 0 #d9d2c0",
+          }}
+        />
+      ))}
+      <div className="absolute inset-0">{children}</div>
+    </div>
   );
 }
 
@@ -124,29 +183,53 @@ function Scoreboard() {
   );
 }
 
+/** De kaartjes van de andere spelers liggen gewoon op tafel, voor hun plek. */
 function OtherTimelines() {
-  const { players, active } = useGameStore();
+  const { players, active, target } = useGameStore();
   const others = players.filter((_, i) => i !== active);
   return (
-    <div className="flex flex-wrap justify-center gap-2 text-xs">
+    <div
+      className="grid w-full gap-x-6 gap-y-3"
+      style={{
+        gridTemplateColumns: `repeat(${Math.min(others.length, 3)}, minmax(0, 1fr))`,
+      }}
+    >
       {others.map((p) => (
-        <p
-          key={p.id}
-          className="rounded-full bg-stone-950/70 px-3 py-1 text-white"
-        >
-          <span className="font-semibold">{p.name}:</span>{" "}
-          <span className="tabular-nums">
-            {p.timeline.map((s) => s.year).join(" · ")}
-          </span>
-        </p>
+        <div key={p.id} className="min-w-0">
+          <p className="mx-auto mb-1.5 w-fit rounded-full bg-stone-950/75 px-3 py-0.5 text-xs font-semibold text-white">
+            {p.name} · {p.timeline.length}/{target}
+          </p>
+          <div className="overflow-x-auto pb-2">
+            <ul
+              className="mx-auto flex w-max items-center gap-1.5 px-1"
+              aria-label={`Tijdlijn van ${p.name}`}
+            >
+              {p.timeline.map((song) => (
+                <motion.li
+                  key={song.id}
+                  initial={{ scale: 0.6, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ type: "spring", stiffness: 220, damping: 20 }}
+                >
+                  <CompactCard song={song} />
+                </motion.li>
+              ))}
+            </ul>
+          </div>
+        </div>
       ))}
     </div>
   );
 }
 
-/** Stoelen die onder de rand van de tafel vandaan komen (alleen decoratie). */
+/** Stoelen die half onder de tafel geschoven staan (alleen op grotere schermen). */
 function Chairs() {
-  const spots = ["left-[16%]", "left-[44%]", "left-[72%]"];
+  const spots = [
+    "left-[calc(20%-3.5rem)]",
+    "left-[calc(40%-3.5rem)]",
+    "left-[calc(60%-3.5rem)]",
+    "left-[calc(80%-3.5rem)]",
+  ];
   return (
     <div
       aria-hidden
@@ -154,12 +237,8 @@ function Chairs() {
     >
       {spots.map((left) => (
         <Fragment key={left}>
-          <div
-            className={`chair absolute top-1 h-14 w-28 rounded-2xl ${left}`}
-          />
-          <div
-            className={`chair absolute bottom-1 h-14 w-28 rounded-2xl ${left}`}
-          />
+          <Chair className={`absolute top-0.5 ${left}`} />
+          <Chair flip className={`absolute bottom-0.5 ${left}`} />
         </Fragment>
       ))}
     </div>
@@ -254,8 +333,11 @@ export function Table() {
 
   return (
     <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
-      <main className="floor flex flex-1 flex-col items-center gap-3 px-3 py-4 sm:px-6">
-        <header className="flex w-full max-w-5xl flex-col items-center gap-3 rounded-2xl bg-stone-950/85 p-3 text-white shadow-lg backdrop-blur">
+      <main className="floor relative flex flex-1 flex-col items-center gap-3 overflow-hidden px-3 py-4 sm:px-6">
+        <Plant className="pointer-events-none absolute -right-10 top-28 hidden size-48 min-[1700px]:block" />
+        <Plant className="pointer-events-none absolute -left-12 bottom-16 hidden size-52 min-[1700px]:block" />
+
+        <header className="relative z-20 flex w-full max-w-[1500px] flex-col items-center gap-3 rounded-2xl bg-stone-950/85 p-3 text-white shadow-lg backdrop-blur">
           <div className="flex w-full items-center justify-between">
             <h1 className="text-xl font-black tracking-tight">Hitsterapp</h1>
             <div className="flex items-center gap-1">
@@ -274,64 +356,32 @@ export function Table() {
         </header>
 
         {/* De kamer: vloerkleed met daarop de ovale houten eettafel, van bovenaf */}
-        <div className="relative flex w-full max-w-5xl flex-1 flex-col px-2 py-6 md:px-10 md:py-16">
+        <div className="relative flex w-full max-w-[1500px] flex-1 flex-col px-2 py-6 md:px-6 md:py-[4.5rem]">
           <div aria-hidden className="rug absolute inset-0 rounded-3xl" />
           <Chairs />
 
           <section
             aria-label="Speeltafel"
-            className="wood-top relative z-10 flex flex-1 flex-col justify-between gap-6 rounded-[2rem] p-4 sm:rounded-[50%/22%] sm:px-16 sm:py-12"
+            className="wood-top relative z-10 flex flex-1 flex-col justify-between gap-6 rounded-[2rem] p-4 sm:rounded-[50%/20%] sm:px-24 sm:py-12"
           >
             <OtherTimelines />
 
             <div className="flex flex-col items-center gap-4">
-              <div className="flex items-center gap-6">
-                {/* Stapel */}
-                <div className="relative size-32 sm:size-40" aria-hidden>
-                  <div className="absolute inset-0 translate-x-2 translate-y-2 rounded-lg bg-black/55" />
-                  <div className="absolute inset-0 translate-x-1 translate-y-1 rounded-lg bg-black/65" />
-                  <div className="absolute inset-0">
-                    <CardBack />
-                  </div>
-                </div>
-
-                <div className="relative">
-                  <AnimatePresence mode="wait">
-                    {(placing || phase === "steal") && current ? (
-                      <motion.div
-                        key={current.id}
-                        initial={{ y: -60, x: -80, rotate: -10, opacity: 0 }}
-                        animate={{ y: 0, x: 0, rotate: 0, opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        transition={{
-                          type: "spring",
-                          stiffness: 180,
-                          damping: 18,
-                        }}
-                      >
-                        <MysteryCard disabled={!showSlots} />
-                      </motion.div>
-                    ) : null}
-                    {phase === "reveal" && result ? (
-                      <motion.div
-                        key={`reveal-${result.song.id}`}
-                        initial={{ rotateY: 90, opacity: 0 }}
-                        animate={{ rotateY: 0, opacity: 1 }}
-                        transition={{ duration: 0.4, ease: "easeOut" }}
-                        style={{ perspective: 800 }}
-                        className={
-                          result.winnerId === null ? "opacity-80 grayscale" : ""
-                        }
-                      >
-                        <SongCard
-                          song={result.song}
-                          highlight={result.winnerId !== null}
-                        />
-                      </motion.div>
-                    ) : null}
-                  </AnimatePresence>
-                </div>
-              </div>
+              <Deck remaining={deck.length}>
+                {(placing || phase === "steal") && current ? (
+                  <motion.div
+                    key={current.id}
+                    initial={{ y: -50, x: -60, rotate: -8, opacity: 0 }}
+                    animate={{ y: 0, x: 0, rotate: 0, opacity: 1 }}
+                    transition={{ type: "spring", stiffness: 180, damping: 18 }}
+                  >
+                    <MysteryCard disabled={!showSlots} />
+                  </motion.div>
+                ) : null}
+                {phase === "reveal" && result ? (
+                  <FlipCard key={result.song.id} result={result} />
+                ) : null}
+              </Deck>
 
               <div
                 className="flex min-h-12 flex-col items-center gap-3 text-center"

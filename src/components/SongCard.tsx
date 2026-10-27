@@ -93,3 +93,23 @@ export function TokenCoin() {
     />
   );
 }
+
+/** Kleine variant voor de tijdlijnen van de andere spelers. */
+export function CompactCard({ song }: { song: Song }) {
+  return (
+    <div
+      className="flex size-20 shrink-0 flex-col items-center justify-between rounded px-1 py-1.5 text-center text-[#14141f] shadow-[0_5px_10px_rgba(0,0,0,0.4)] ring-1 ring-black/20 sm:size-24"
+      style={{ background: gradientFor(song.year) }}
+    >
+      <p className="line-clamp-1 w-full text-[9px] font-semibold leading-tight">
+        {song.artist}
+      </p>
+      <p className="text-2xl font-bold leading-none tracking-tight tabular-nums sm:text-3xl">
+        {song.year}
+      </p>
+      <p className="line-clamp-1 w-full text-[9px] font-light italic leading-tight">
+        {song.title}
+      </p>
+    </div>
+  );
+}

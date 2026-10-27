@@ -29,62 +29,86 @@ body {
   outline-offset: 3px;
 }
 
-/* Woonkamer van bovenaf: eikenhouten vloer, vloerkleed, houten tafel, stoelen. */
+/* Woonkamer van bovenaf: eikenhouten vloer, vloerkleed, houten tafel. */
 .floor {
   background-color: #c9a97f;
   background-image:
-    radial-gradient(
-      ellipse at 50% 35%,
-      rgba(255, 240, 210, 0.28),
-      rgba(0, 0, 0, 0.38) 100%
+    linear-gradient(
+      118deg,
+      rgba(255, 246, 222, 0.42),
+      rgba(255, 246, 222, 0.1) 32%,
+      transparent 55%
     ),
-    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='700' height='300'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.004 0.07' numOctaves='3' seed='7'/><feColorMatrix values='0 0 0 0 0.3 0 0 0 0 0.17 0 0 0 0 0.07 0 0 0 0.5 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"),
-    repeating-linear-gradient(
-      90deg,
-      rgba(0, 0, 0, 0.12) 0 2px,
-      transparent 2px 150px
-    );
+    radial-gradient(
+      ellipse at 50% 40%,
+      transparent 35%,
+      rgba(0, 0, 0, 0.4) 100%
+    ),
+    url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20width%3D'600'%20height%3D'240'%3E%0A%3Cfilter%20id%3D'g'%20x%3D'0'%20y%3D'0'%20width%3D'100%25'%20height%3D'100%25'%3E%3CfeTurbulence%20type%3D'fractalNoise'%20baseFrequency%3D'0.004%200.12'%20numOctaves%3D'3'%20seed%3D'5'%2F%3E%3CfeColorMatrix%20values%3D'0%200%200%200%200.36%200%200%200%200%200.2%200%200%200%200%200.08%200%200%200%200.55%200'%2F%3E%3C%2Ffilter%3E%0A%3Crect%20width%3D'170'%20height%3D'120'%20fill%3D'rgb(201%2C166%2C120)'%2F%3E%3Crect%20x%3D'170'%20width%3D'430'%20height%3D'120'%20fill%3D'rgb(210%2C177%2C133)'%2F%3E%0A%3Crect%20y%3D'120'%20width%3D'430'%20height%3D'120'%20fill%3D'rgb(196%2C160%2C113)'%2F%3E%3Crect%20x%3D'430'%20y%3D'120'%20width%3D'170'%20height%3D'120'%20fill%3D'rgb(207%2C172%2C127)'%2F%3E%0A%3Crect%20width%3D'600'%20height%3D'240'%20filter%3D'url(%23g)'%2F%3E%0A%3Cg%20stroke%3D'rgba(50%2C28%2C8%2C0.55)'%20stroke-width%3D'2'%3E%3Cpath%20d%3D'M0%201H600M0%20121H600M170%200V120M430%20120V240'%2F%3E%3C%2Fg%3E%0A%3Cg%20stroke%3D'rgba(255%2C235%2C200%2C0.25)'%20stroke-width%3D'1'%3E%3Cpath%20d%3D'M0%203H600M0%20123H600'%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E");
+  background-size:
+    auto,
+    auto,
+    600px 240px;
 }
 
 .rug {
-  background-color: #dcd6c8;
+  background-color: #cdc5b3;
   background-image:
+    url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20width%3D'400'%20height%3D'400'%3E%0A%3Cfilter%20id%3D'g'%20x%3D'0'%20y%3D'0'%20width%3D'100%25'%20height%3D'100%25'%3E%3CfeTurbulence%20type%3D'fractalNoise'%20baseFrequency%3D'0.9'%20numOctaves%3D'2'%20seed%3D'2'%2F%3E%3CfeColorMatrix%20values%3D'0%200%200%200%200.45%200%200%200%200%200.4%200%200%200%200%200.32%200%200%200%200.35%200'%2F%3E%3C%2Ffilter%3E%0A%3Crect%20width%3D'400'%20height%3D'400'%20filter%3D'url(%23g)'%2F%3E%3C%2Fsvg%3E"),
     repeating-linear-gradient(
       45deg,
-      rgba(0, 0, 0, 0.035) 0 3px,
-      transparent 3px 7px
+      rgba(0, 0, 0, 0.04) 0 2px,
+      transparent 2px 5px
     ),
     repeating-linear-gradient(
       -45deg,
-      rgba(255, 255, 255, 0.05) 0 3px,
-      transparent 3px 7px
+      rgba(255, 255, 255, 0.06) 0 2px,
+      transparent 2px 5px
     );
   box-shadow:
-    inset 0 0 0 10px #dcd6c8,
-    inset 0 0 0 12px #b5ad9a,
-    inset 0 0 0 20px #dcd6c8,
-    0 14px 40px rgba(0, 0, 0, 0.35);
+    inset 0 0 0 14px #cdc5b3,
+    inset 0 0 0 16px #8f8672,
+    inset 0 0 0 24px #cdc5b3,
+    inset 0 0 0 26px #a89f8a,
+    10px 18px 36px rgba(0, 0, 0, 0.4);
+}
+
+/* Franje aan de korte kanten van het kleed. */
+.rug::before,
+.rug::after {
+  content: "";
+  position: absolute;
+  top: 10px;
+  bottom: 10px;
+  width: 14px;
+  background: repeating-linear-gradient(0deg, #ece6d6 0 2px, #cfc8b6 2px 4px);
+  border-radius: 3px;
+}
+.rug::before {
+  left: -12px;
+}
+.rug::after {
+  right: -12px;
 }
 
 .wood-top {
   background-color: #d3ad7a;
   background-image:
     linear-gradient(
-      100deg,
-      rgba(255, 240, 215, 0.3),
-      transparent 40%,
-      rgba(90, 50, 10, 0.1) 85%
+      118deg,
+      rgba(255, 255, 255, 0.28),
+      transparent 32%,
+      transparent 62%,
+      rgba(255, 255, 255, 0.12)
     ),
-    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='900' height='400'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.003 0.11' numOctaves='4' seed='3'/><feColorMatrix values='0 0 0 0 0.45 0 0 0 0 0.27 0 0 0 0 0.1 0 0 0 0.75 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+    url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20width%3D'1200'%20height%3D'600'%20preserveAspectRatio%3D'none'%3E%0A%3Cfilter%20id%3D'g'%20x%3D'0'%20y%3D'0'%20width%3D'100%25'%20height%3D'100%25'%3E%3CfeTurbulence%20type%3D'fractalNoise'%20baseFrequency%3D'0.0025%200.1'%20numOctaves%3D'4'%20seed%3D'11'%2F%3E%3CfeColorMatrix%20values%3D'0%200%200%200%200.45%200%200%200%200%200.27%200%200%200%200%200.1%200%200%200%200.8%200'%2F%3E%3C%2Ffilter%3E%0A%3Crect%20width%3D'1200'%20height%3D'600'%20filter%3D'url(%23g)'%2F%3E%0A%3Crect%20y%3D'120'%20width%3D'1200'%20height%3D'120'%20fill%3D'rgba(255%2C235%2C200%2C0.1)'%2F%3E%3Crect%20y%3D'360'%20width%3D'1200'%20height%3D'120'%20fill%3D'rgba(255%2C235%2C200%2C0.1)'%2F%3E%0A%3Crect%20y%3D'240'%20width%3D'1200'%20height%3D'120'%20fill%3D'rgba(90%2C50%2C10%2C0.06)'%2F%3E%0A%3Cg%20stroke%3D'rgba(70%2C40%2C12%2C0.3)'%20stroke-width%3D'2'%3E%3Cpath%20d%3D'M0%20120H1200M0%20240H1200M0%20360H1200M0%20480H1200'%2F%3E%3C%2Fg%3E%0A%3Cg%20fill%3D'none'%20stroke%3D'rgba(80%2C45%2C15%2C0.4)'%3E%3Cellipse%20cx%3D'330'%20cy%3D'300'%20rx%3D'26'%20ry%3D'10'%2F%3E%3Cellipse%20cx%3D'330'%20cy%3D'300'%20rx%3D'15'%20ry%3D'5.5'%2F%3E%3Cellipse%20cx%3D'880'%20cy%3D'170'%20rx%3D'20'%20ry%3D'8'%2F%3E%3Cellipse%20cx%3D'880'%20cy%3D'170'%20rx%3D'10'%20ry%3D'4'%2F%3E%3C%2Fg%3E%0A%3Cellipse%20cx%3D'330'%20cy%3D'300'%20rx%3D'8'%20ry%3D'3'%20fill%3D'rgba(70%2C40%2C12%2C0.5)'%2F%3E%3Cellipse%20cx%3D'880'%20cy%3D'170'%20rx%3D'5'%20ry%3D'2'%20fill%3D'rgba(70%2C40%2C12%2C0.5)'%2F%3E%3C%2Fsvg%3E");
+  background-size:
+    auto,
+    100% 100%;
   box-shadow:
-    inset 0 0 0 3px rgba(255, 225, 180, 0.35),
-    inset 0 0 90px rgba(90, 50, 10, 0.25),
-    0 34px 50px rgba(0, 0, 0, 0.45);
-}
-
-.chair {
-  background: #2a2a2d;
-  box-shadow:
-    inset 0 3px 0 rgba(255, 255, 255, 0.12),
-    0 8px 14px rgba(0, 0, 0, 0.35);
+    inset 2px 2px 0 rgba(255, 240, 210, 0.55),
+    inset -3px -4px 0 rgba(90, 50, 10, 0.35),
+    inset 0 0 70px rgba(90, 50, 10, 0.22),
+    14px 26px 46px rgba(0, 0, 0, 0.42),
+    4px 8px 10px rgba(0, 0, 0, 0.25);
 }

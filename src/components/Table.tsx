@@ -19,7 +19,7 @@ import { describeSlot, MAX_TOKENS } from "@/game/rules";
 import { useGameStore } from "@/game/store";
 import type { Result } from "@/game/types";
 import { playCue } from "@/lib/feedback";
-import { CardBack, SongCard } from "./SongCard";
+import { CardBack, SongCard, TokenCoin } from "./SongCard";
 import { SoundToggle } from "./SoundToggle";
 
 const SLOT_HEIGHT = "h-32 sm:h-40";
@@ -110,7 +110,13 @@ function Scoreboard() {
                 : "bg-white/10 text-white ring-1 ring-white/25"
             }`}
           >
-            {p.name} · {p.timeline.length}/{target} · {p.tokens} tokens
+            {p.name} · {p.timeline.length}/{target} · {p.tokens} tokens{" "}
+            <span className="ml-1 inline-flex gap-0.5 align-middle">
+              {Array.from({ length: p.tokens }, (_, n) => (
+                // biome-ignore lint/suspicious/noArrayIndexKey: vaste, identieke munten
+                <TokenCoin key={n} />
+              ))}
+            </span>
           </li>
         );
       })}

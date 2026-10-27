@@ -1,25 +1,30 @@
 import type { Song } from "@/game/types";
 
-/** Vierkante kaartjes, zoals bij het bordspel. */
+/** Vierkante kaartjes met een zacht kleurverloop, zoals bij het bordspel. */
 const SIZE = "size-32 sm:size-40";
 
-/** Felle kleuren per decennium; tekstkleur gekozen voor genoeg contrast. */
-const PALETTE = [
-  { bg: "#FF4D8D", fg: "#111111" },
-  { bg: "#2DC4D9", fg: "#111111" },
-  { bg: "#FFD23F", fg: "#111111" },
-  { bg: "#FF8A3D", fg: "#111111" },
-  { bg: "#7C3AED", fg: "#FFFFFF" },
-  { bg: "#A3E635", fg: "#111111" },
-  { bg: "#2563EB", fg: "#FFFFFF" },
-  { bg: "#E11D48", fg: "#FFFFFF" },
-];
+/**
+ * Verloop per decennium (boven naar onder). Alle kleuren zijn licht genoeg
+ * voor de donkere tekst (contrast boven 4,5:1).
+ */
+const GRADIENTS: Record<number, [string, string]> = {
+  195: ["#b58af2", "#d6b8fb"], // paars
+  196: ["#ffd84a", "#ffb866"], // geel naar oranje
+  197: ["#ff7aa8", "#f06bc0"], // roze
+  198: ["#4f9cf5", "#7fc0f7"], // blauw
+  199: ["#8fd14f", "#c3ec7a"], // groen
+  200: ["#7fd6e0", "#b9eef0"], // lichtturquoise
+  201: ["#ff9b5c", "#ffc48a"], // oranje
+  202: ["#ff7d7d", "#ffb0a0"], // koraal
+};
+const FALLBACK: [string, string] = ["#c3cbd6", "#e2e7ee"];
 
-function paletteFor(year: number) {
-  return PALETTE[Math.floor(year / 10) % PALETTE.length];
+function gradientFor(year: number): string {
+  const [from, to] = GRADIENTS[Math.floor(year / 10)] ?? FALLBACK;
+  return `linear-gradient(165deg, ${from}, ${to})`;
 }
 
-/** Voorkant: artiest bovenaan, jaar groot in het midden, titel onderaan. */
+/** Voorkant: artiest bovenaan, jaar groot in het midden, titel cursief onderaan. */
 export function SongCard({
   song,
   highlight = false,
@@ -27,52 +32,43 @@ export function SongCard({
   song: Song;
   highlight?: boolean;
 }) {
-  const { bg, fg } = paletteFor(song.year);
   return (
     <div
-      className={`${SIZE} relative flex shrink-0 flex-col justify-between overflow-hidden rounded-lg p-3 shadow-[0_8px_16px_rgba(0,0,0,0.45)] ${
-        highlight ? "ring-4 ring-white" : "ring-1 ring-black/30"
+      className={`${SIZE} flex shrink-0 flex-col items-center justify-between rounded-md px-2 py-3 text-center text-[#14141f] shadow-[0_8px_16px_rgba(0,0,0,0.4)] ${
+        highlight ? "ring-4 ring-white" : "ring-1 ring-black/20"
       }`}
-      style={{ backgroundColor: bg, color: fg }}
+      style={{ background: gradientFor(song.year) }}
     >
-      <span
-        aria-hidden
-        className="absolute -right-8 -bottom-8 size-24 rounded-full bg-white/20"
-      />
-      <span
-        aria-hidden
-        className="absolute -top-6 -left-6 size-16 rounded-full bg-black/10"
-      />
-      <p className="relative line-clamp-2 text-[11px] font-extrabold uppercase leading-tight tracking-wide sm:text-xs">
+      <p className="line-clamp-2 text-[11px] font-semibold leading-tight sm:text-xs">
         {song.artist}
       </p>
-      <p className="relative text-center text-4xl font-black leading-none tabular-nums sm:text-5xl">
+      <p className="text-4xl font-bold leading-none tracking-tight tabular-nums sm:text-5xl">
         {song.year}
       </p>
-      <p className="relative line-clamp-2 text-center text-xs font-semibold italic leading-tight">
+      <p className="line-clamp-2 text-xs font-light italic leading-tight sm:text-sm">
         {song.title}
       </p>
     </div>
   );
 }
 
-/** Achterkant: een draaiende plaat; het jaar is nog geheim. */
+/** Achterkant: een munt met neonregenboog; het jaar is nog geheim. */
 export function CardBack({ label }: { label?: string }) {
   return (
     <div
-      className={`${SIZE} relative flex shrink-0 items-center justify-center overflow-hidden rounded-lg bg-black shadow-[0_8px_16px_rgba(0,0,0,0.45)] ring-1 ring-black/40`}
+      className={`${SIZE} relative flex shrink-0 items-center justify-center overflow-hidden rounded-md bg-[#15131c] shadow-[0_8px_16px_rgba(0,0,0,0.45)] ring-1 ring-black/40`}
     >
       <span
         aria-hidden
         className="absolute inset-3 rounded-full"
         style={{
           background:
-            "conic-gradient(from 20deg, #FF4D8D, #FFD23F, #2DC4D9, #7C3AED, #FF4D8D)",
+            "conic-gradient(from 20deg, #ff4d8d, #ffd23f, #2dc4d9, #7c3aed, #ff4d8d)",
         }}
       />
       <span
         aria-hidden
-        className="absolute inset-[30%] rounded-full bg-black"
+        className="absolute inset-[30%] rounded-full bg-[#15131c]"
       />
       <span aria-hidden className="absolute size-2 rounded-full bg-white/80" />
       {label ? (
@@ -81,5 +77,19 @@ export function CardBack({ label }: { label?: string }) {
         </p>
       ) : null}
     </div>
+  );
+}
+
+/** Kleine munt voor het scorebord. */
+export function TokenCoin() {
+  return (
+    <span
+      aria-hidden
+      className="inline-block size-3.5 rounded-full ring-1 ring-black/50"
+      style={{
+        background:
+          "radial-gradient(circle, #15131c 0 38%, transparent 40%), conic-gradient(#ff4d8d, #ffd23f, #2dc4d9, #7c3aed, #ff4d8d)",
+      }}
+    />
   );
 }

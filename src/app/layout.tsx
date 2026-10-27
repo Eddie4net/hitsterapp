@@ -14,12 +14,12 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Hitsterapp",
+  title: "Hitster",
   description: "Leg de muziekkaartjes in de juiste volgorde op de tafel.",
   icons: { icon: "/icon.svg", apple: "/apple-icon.png" },
   appleWebApp: {
     capable: true,
-    title: "Hitsterapp",
+    title: "Hitster",
     statusBarStyle: "black-translucent",
   },
 };

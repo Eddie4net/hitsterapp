@@ -2,8 +2,8 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Hitsterapp",
-    short_name: "Hitsterapp",
+    name: "Hitster",
+    short_name: "Hitster",
     description: "Leg de muziekkaartjes in de juiste volgorde op de tafel.",
     lang: "nl",
     start_url: "/",

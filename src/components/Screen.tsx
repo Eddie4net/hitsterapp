@@ -19,7 +19,7 @@ export function Screen({
         <div className="mb-6 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <Disc3 className="size-10 text-gold" aria-hidden />
-            <h1 className="text-3xl font-black tracking-tight">Hitsterapp</h1>
+            <h1 className="text-3xl font-black tracking-tight">Hitster</h1>
           </div>
           <div className="flex items-center gap-1">
             <RulesButton />

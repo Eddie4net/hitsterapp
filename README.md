@@ -1,4 +1,4 @@
-# Hitsterapp
+# Hitster
 
 Een webversie van het kaartspel Hitster: leg muziekkaartjes in de juiste volgorde op de tafel. Gebouwd met Next.js, Tailwind, Motion en Zustand.
 

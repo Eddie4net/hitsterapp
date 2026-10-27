@@ -542,7 +542,7 @@ export function Table({ view }: { view: GameView }) {
         <header className="relative z-30 flex w-full max-w-[1500px] flex-col items-center gap-3 rounded-2xl bg-stone-950/85 p-3 text-white shadow-lg backdrop-blur">
           <div className="flex w-full flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-3">
-              <h1 className="text-xl font-black tracking-tight">Hitsterapp</h1>
+              <h1 className="text-xl font-black tracking-tight">Hitster</h1>
               {code ? (
                 <span className="rounded-full bg-white/10 px-3 py-0.5 text-sm font-bold tracking-widest ring-1 ring-white/25">
                   <span className="sr-only">Spelcode </span>

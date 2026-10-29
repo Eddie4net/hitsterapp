@@ -1,4 +1,5 @@
 import type { Song } from "@/game/types";
+import { LogoMark, Wordmark } from "./Logo";
 
 /** Vierkante kaartjes met een zacht kleurverloop, zoals bij het bordspel. */
 const SIZE = "size-32 sm:size-40";
@@ -52,25 +53,30 @@ export function SongCard({
   );
 }
 
-/** Achterkant: een munt met neonregenboog; het jaar is nog geheim. */
+/** Achterkant: het Hitster-merkteken op diep paars, met een gouden lijst en het woord erboven. */
 export function CardBack({ label }: { label?: string }) {
   return (
     <div
-      className={`${SIZE} relative flex shrink-0 items-center justify-center overflow-hidden rounded-md bg-[#15131c] shadow-[0_8px_16px_rgba(0,0,0,0.45)] ring-1 ring-black/40`}
+      className={`${SIZE} relative shrink-0 overflow-hidden rounded-md shadow-[0_8px_16px_rgba(0,0,0,0.45)] ring-1 ring-black/40`}
+      style={{
+        background:
+          "radial-gradient(120% 90% at 50% 40%, #2a1857 0%, #150b30 55%, #090514 100%)",
+      }}
     >
       <span
         aria-hidden
-        className="absolute inset-3 rounded-full"
+        className="absolute inset-0 opacity-[0.07]"
         style={{
-          background:
-            "conic-gradient(from 20deg, #ff4d8d, #ffd23f, #2dc4d9, #7c3aed, #ff4d8d)",
+          backgroundImage:
+            "repeating-linear-gradient(135deg, #fff 0 1px, transparent 1px 7px)",
         }}
       />
       <span
         aria-hidden
-        className="absolute inset-[30%] rounded-full bg-[#15131c]"
+        className="absolute inset-[4px] rounded-[5px] border border-amber-200/35"
       />
-      <span aria-hidden className="absolute size-2 rounded-full bg-white/80" />
+      <Wordmark className="absolute left-1/2 top-[6%] w-[56%] -translate-x-1/2" />
+      <LogoMark className="absolute inset-x-[12%] top-[16%] w-[76%] drop-shadow-[0_4px_8px_rgba(0,0,0,0.5)]" />
       {label ? (
         <p className="absolute inset-x-0 bottom-1 text-center text-xs font-bold text-white">
           <span className="rounded bg-black/70 px-2 py-0.5">{label}</span>
@@ -80,16 +86,12 @@ export function CardBack({ label }: { label?: string }) {
   );
 }
 
-/** Kleine munt voor het scorebord. */
-export function TokenCoin() {
+/** Token: gouden gefreesde munt met het merkteken. */
+export function TokenCoin({ className = "size-5" }: { className?: string }) {
   return (
-    <span
-      aria-hidden
-      className="inline-block size-3.5 rounded-full ring-1 ring-black/50"
-      style={{
-        background:
-          "radial-gradient(circle, #15131c 0 38%, transparent 40%), conic-gradient(#ff4d8d, #ffd23f, #2dc4d9, #7c3aed, #ff4d8d)",
-      }}
+    <LogoMark
+      kind="coin"
+      className={`inline-block align-middle drop-shadow-[0_1px_1.5px_rgba(0,0,0,0.55)] ${className}`}
     />
   );
 }

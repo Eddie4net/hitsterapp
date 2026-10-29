@@ -56,65 +56,79 @@ body {
 }
 
 .rug {
-  background-color: #cdc5b3;
+  /* Pluizig hoogpolig tapijt (gegenereerde textuur) met een rafelige rand en zachte schaduw. */
+  background-color: #d8cfbd;
   background-image:
-    url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20width%3D'400'%20height%3D'400'%3E%0A%3Cfilter%20id%3D'g'%20x%3D'0'%20y%3D'0'%20width%3D'100%25'%20height%3D'100%25'%3E%3CfeTurbulence%20type%3D'fractalNoise'%20baseFrequency%3D'0.9'%20numOctaves%3D'2'%20seed%3D'2'%2F%3E%3CfeColorMatrix%20values%3D'0%200%200%200%200.45%200%200%200%200%200.4%200%200%200%200%200.32%200%200%200%200.35%200'%2F%3E%3C%2Ffilter%3E%0A%3Crect%20width%3D'400'%20height%3D'400'%20filter%3D'url(%23g)'%2F%3E%3C%2Fsvg%3E"),
-    repeating-linear-gradient(
-      45deg,
-      rgba(0, 0, 0, 0.04) 0 2px,
-      transparent 2px 5px
+    radial-gradient(
+      ellipse at 50% 45%,
+      rgba(255, 250, 240, 0) 52%,
+      rgba(112, 96, 76, 0.22) 100%
     ),
-    repeating-linear-gradient(
-      -45deg,
-      rgba(255, 255, 255, 0.06) 0 2px,
-      transparent 2px 5px
-    );
+    url("/textures/rug.jpg");
+  background-size: auto, cover;
+  background-position: center;
   box-shadow:
-    inset 0 0 0 14px #cdc5b3,
-    inset 0 0 0 16px #8f8672,
-    inset 0 0 0 24px #cdc5b3,
-    inset 0 0 0 26px #a89f8a,
-    10px 18px 36px rgba(0, 0, 0, 0.4);
+    0 12px 30px rgba(40, 24, 10, 0.3),
+    inset 0 0 44px rgba(110, 94, 74, 0.38);
+  filter: url(#rug-fuzz);
 }
 
-/* Franje aan de korte kanten van het kleed. */
-.rug::before,
-.rug::after {
-  content: "";
-  position: absolute;
-  top: 10px;
-  bottom: 10px;
-  width: 14px;
-  background: repeating-linear-gradient(0deg, #ece6d6 0 2px, #cfc8b6 2px 4px);
-  border-radius: 3px;
-}
-.rug::before {
-  left: -12px;
-}
-.rug::after {
-  right: -12px;
-}
-
+/*
+ * Tafelblad: één massief blad (gegenereerde textuur). Het licht komt van hanglampen recht boven
+ * de tafel, het is avond: twee zachte glansvlekken (de weerspiegeling van de lampen), een warme
+ * lichtpoel in het midden en een tafel die naar de randen toe donkerder wordt.
+ */
 .wood-top {
-  background-color: #d3ad7a;
+  background-color: #c98a45;
   background-image:
-    linear-gradient(
-      118deg,
-      rgba(255, 255, 255, 0.28),
-      transparent 32%,
-      transparent 62%,
-      rgba(255, 255, 255, 0.12)
+    radial-gradient(
+      ellipse 20% 15% at 31% 36%,
+      rgba(255, 246, 220, 0.3),
+      rgba(255, 240, 205, 0.1) 48%,
+      transparent 72%
     ),
-    url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20width%3D'1200'%20height%3D'600'%20preserveAspectRatio%3D'none'%3E%0A%3Cfilter%20id%3D'g'%20x%3D'0'%20y%3D'0'%20width%3D'100%25'%20height%3D'100%25'%3E%3CfeTurbulence%20type%3D'fractalNoise'%20baseFrequency%3D'0.0025%200.1'%20numOctaves%3D'4'%20seed%3D'11'%2F%3E%3CfeColorMatrix%20values%3D'0%200%200%200%200.45%200%200%200%200%200.27%200%200%200%200%200.1%200%200%200%200.8%200'%2F%3E%3C%2Ffilter%3E%0A%3Crect%20width%3D'1200'%20height%3D'600'%20filter%3D'url(%23g)'%2F%3E%0A%3Crect%20y%3D'120'%20width%3D'1200'%20height%3D'120'%20fill%3D'rgba(255%2C235%2C200%2C0.1)'%2F%3E%3Crect%20y%3D'360'%20width%3D'1200'%20height%3D'120'%20fill%3D'rgba(255%2C235%2C200%2C0.1)'%2F%3E%0A%3Crect%20y%3D'240'%20width%3D'1200'%20height%3D'120'%20fill%3D'rgba(90%2C50%2C10%2C0.06)'%2F%3E%0A%3Cg%20stroke%3D'rgba(70%2C40%2C12%2C0.3)'%20stroke-width%3D'2'%3E%3Cpath%20d%3D'M0%20120H1200M0%20240H1200M0%20360H1200M0%20480H1200'%2F%3E%3C%2Fg%3E%0A%3Cg%20fill%3D'none'%20stroke%3D'rgba(80%2C45%2C15%2C0.4)'%3E%3Cellipse%20cx%3D'330'%20cy%3D'300'%20rx%3D'26'%20ry%3D'10'%2F%3E%3Cellipse%20cx%3D'330'%20cy%3D'300'%20rx%3D'15'%20ry%3D'5.5'%2F%3E%3Cellipse%20cx%3D'880'%20cy%3D'170'%20rx%3D'20'%20ry%3D'8'%2F%3E%3Cellipse%20cx%3D'880'%20cy%3D'170'%20rx%3D'10'%20ry%3D'4'%2F%3E%3C%2Fg%3E%0A%3Cellipse%20cx%3D'330'%20cy%3D'300'%20rx%3D'8'%20ry%3D'3'%20fill%3D'rgba(70%2C40%2C12%2C0.5)'%2F%3E%3Cellipse%20cx%3D'880'%20cy%3D'170'%20rx%3D'5'%20ry%3D'2'%20fill%3D'rgba(70%2C40%2C12%2C0.5)'%2F%3E%3C%2Fsvg%3E");
+    radial-gradient(
+      ellipse 20% 15% at 69% 36%,
+      rgba(255, 246, 220, 0.26),
+      rgba(255, 240, 205, 0.09) 48%,
+      transparent 72%
+    ),
+    radial-gradient(
+      ellipse 78% 72% at 50% 40%,
+      rgba(255, 214, 140, 0.2),
+      rgba(255, 200, 120, 0.06) 55%,
+      rgba(28, 12, 3, 0.26) 100%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.06),
+      transparent 34%,
+      transparent 70%,
+      rgba(0, 0, 0, 0.1)
+    ),
+    url("/textures/wood-top.jpg");
+  background-size: auto, auto, auto, auto, cover;
+  background-position: center;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 240, 205, 0.6),
+    inset 0 0 0 1px rgba(110, 60, 20, 0.35),
+    inset 0 -2px 4px rgba(80, 40, 10, 0.28),
+    inset 0 0 64px rgba(90, 46, 12, 0.3);
+}
+
+/* De dikte van het blad, net zichtbaar onder de voorkant, met houtdraad over de hele rand. */
+.wood-edge {
+  background-image:
+    linear-gradient(180deg, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.2)),
+    url("/textures/wood-edge.jpg");
   background-size:
-    auto,
+    100% 100%,
     100% 100%;
   box-shadow:
-    inset 2px 2px 0 rgba(255, 240, 210, 0.55),
-    inset -3px -4px 0 rgba(90, 50, 10, 0.35),
-    inset 0 0 70px rgba(90, 50, 10, 0.22),
-    14px 26px 46px rgba(0, 0, 0, 0.42),
-    4px 8px 10px rgba(0, 0, 0, 0.25);
+    0 26px 44px rgba(30, 16, 6, 0.42),
+    0 7px 12px rgba(30, 16, 6, 0.36),
+    inset 0 -3px 5px rgba(40, 18, 6, 0.5);
+  filter: brightness(0.8) saturate(1.05);
 }
 
 /* Stofjes die langzaam door het licht drijven. */

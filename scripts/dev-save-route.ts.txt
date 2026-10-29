@@ -1,0 +1,29 @@
+import { mkdir, writeFile } from "node:fs/promises";
+import path from "node:path";
+import { NextResponse } from "next/server";
+
+/**
+ * TIJDELIJK, alleen tijdens ontwikkelen: slaat een gegenereerde textuur op in public/textures.
+ * Wordt weer verwijderd zodra de texturen klaar zijn.
+ */
+export async function POST(request: Request) {
+  if (process.env.NODE_ENV !== "development") {
+    return NextResponse.json(
+      { error: "alleen in ontwikkelmodus" },
+      { status: 404 },
+    );
+  }
+  const { name, data } = (await request.json()) as {
+    name?: string;
+    data?: string;
+  };
+  if (!name || !data || !/^[a-z0-9-]+\.(jpg|png)$/.test(name)) {
+    return NextResponse.json({ error: "ongeldige invoer" }, { status: 400 });
+  }
+  const dir = name.endsWith(".png")
+    ? path.join(process.cwd(), "public")
+    : path.join(process.cwd(), "public", "textures");
+  await mkdir(dir, { recursive: true });
+  await writeFile(path.join(dir, name), Buffer.from(data, "base64"));
+  return NextResponse.json({ ok: true, name });
+}

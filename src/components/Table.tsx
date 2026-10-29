@@ -28,7 +28,6 @@ import type { Result } from "@/game/types";
 import { resultMessage } from "@/lib/messages";
 import { playerColor } from "@/lib/players";
 import { useTableEffects } from "@/lib/useTableEffects";
-import { useTilt } from "@/lib/useTilt";
 import type { GameView } from "@/net/useGameView";
 import { useMusic } from "@/spotify/music";
 import { useHostMusic } from "@/spotify/useHostMusic";
@@ -36,11 +35,10 @@ import { Ambient } from "./Ambient";
 import { FullscreenToggle } from "./FullscreenToggle";
 import { HitsterStamp } from "./HitsterStamp";
 import { MusicControls } from "./MusicControls";
-import { Chair, Plant } from "./Room";
+import { Chair, FabricDefs, Plant } from "./Room";
 import { RulesButton } from "./RulesDialog";
 import { CardBack, CompactCard, SongCard, TokenCoin } from "./SongCard";
 import { SoundToggle } from "./SoundToggle";
-import { TiltCard } from "./TiltCard";
 
 const SLOT_HEIGHT = "h-32 sm:h-40";
 
@@ -67,28 +65,57 @@ function Slot({
       type="button"
       onClick={() => onPlace(index)}
       aria-label={`Leg het kaartje ${label}`}
-      className={`flex ${SLOT_HEIGHT} w-10 shrink-0 items-center justify-center rounded-lg border-2 border-dashed bg-black/30 transition-all ${
-        isOver
-          ? "w-16 border-white bg-white/30 text-white"
-          : "border-white/80 text-white hover:w-14 hover:bg-black/45"
+      className={`group relative flex ${SLOT_HEIGHT} shrink-0 items-center justify-center rounded-xl transition-all duration-200 ${
+        isOver ? "w-20" : "w-12 hover:w-16"
       }`}
+      style={{
+        background:
+          "linear-gradient(180deg, rgba(48, 24, 8, 0.44), rgba(48, 24, 8, 0.24))",
+        boxShadow: isOver
+          ? "inset 0 2px 8px rgba(0,0,0,0.5), 0 0 0 2px #f4c24d, 0 0 24px rgba(244,194,77,0.55)"
+          : "inset 0 2px 7px rgba(0,0,0,0.5), inset 0 -1px 0 rgba(255,255,255,0.22), 0 1px 0 rgba(255,255,255,0.2)",
+        outline: "1.5px dashed rgba(255,255,255,0.55)",
+        outlineOffset: "-5px",
+      }}
     >
-      <Plus className="size-5" aria-hidden />
+      <span
+        className={`flex size-7 items-center justify-center rounded-full text-stone-900 shadow-md transition-transform group-hover:scale-110 ${
+          isOver ? "scale-125 bg-gold" : "bg-white/90"
+        }`}
+      >
+        <Plus className="size-4" aria-hidden />
+      </span>
     </button>
   );
 }
 
-/** Toont dat iemand al voor deze plek heeft gekozen (zonder het jaar te verklappen). */
-function TakenMarker({ name, color }: { name: string; color: string }) {
+/** Het kaartje van de speler aan de beurt, nog met de achterkant omhoog, op de gekozen plek. */
+function PlacedCard({ name, color }: { name: string; color: string }) {
   return (
     <div
       role="img"
-      aria-label={`${name} legde het kaartje hier`}
-      className={`flex ${SLOT_HEIGHT} w-10 shrink-0 items-center justify-center rounded-lg bg-stone-950/80 ring-2`}
-      style={{ color, ["--tw-ring-color" as string]: color }}
+      aria-label={`${name} legde het kaartje hier, nog niet omgedraaid`}
+      className="rounded-md ring-2"
+      style={{ ["--tw-ring-color" as string]: color }}
     >
-      <span className="text-lg font-black" aria-hidden>
-        {name.slice(0, 1).toUpperCase()}
+      <CardBack />
+    </div>
+  );
+}
+
+/** Een token dat iemand op een plek heeft gelegd om te stelen (zonder het jaar te verklappen). */
+function StealToken({ name, color }: { name: string; color: string }) {
+  return (
+    <div
+      role="img"
+      aria-label={`${name} legde een token hier`}
+      className={`flex ${SLOT_HEIGHT} w-12 shrink-0 items-center justify-center`}
+    >
+      <span
+        className="inline-flex rounded-full p-[3px] shadow-[0_6px_10px_rgba(0,0,0,0.45)]"
+        style={{ background: color }}
+      >
+        <TokenCoin className="size-10" />
       </span>
     </div>
   );
@@ -325,23 +352,54 @@ function OtherTimelines({ view }: { view: GameView }) {
   );
 }
 
+/**
+ * Het tafelblad is een ellips (rounded-[50%/20%]): aan de uiteinden loopt de rand naar beneden
+ * en schuin weg. De stoelen volgen die kromming: de buitenste staan dichter bij de rand en
+ * een beetje gedraaid, loodrecht op de rand, zoals je ze bij een echte ovale tafel zet.
+ */
+const RY = 0.2; // verticale straal van de ronding, als deel van de tafelhoogte
+const TABLE_SHARE = 0.84; // tafelhoogte als deel van de ruimte om de tafel heen
+const ASPECT = 0.55; // gemiddelde hoogte gedeeld door breedte van de tafel
+
+function chairSpot(p: number) {
+  const u = (p - 0.5) / 0.5; // -1 (uiterst links) tot 1 (uiterst rechts)
+  const root = Math.sqrt(1 - u * u);
+  return {
+    key: p,
+    left: `calc(${p * 100}% - 3.5rem)`,
+    drop: RY * (1 - root) * 100 * TABLE_SHARE,
+    angle: (Math.atan((RY * ASPECT * 2 * u) / root) * 180) / Math.PI,
+  };
+}
+
+const CHAIR_SPOTS = [0.2, 0.4, 0.6, 0.8].map(chairSpot);
+
 /** Stoelen die half onder de tafel geschoven staan (alleen op grotere schermen). */
 function Chairs() {
-  const spots = [
-    "left-[calc(20%-3.5rem)]",
-    "left-[calc(40%-3.5rem)]",
-    "left-[calc(60%-3.5rem)]",
-    "left-[calc(80%-3.5rem)]",
-  ];
   return (
     <div
       aria-hidden
       className="pointer-events-none absolute inset-0 hidden md:block"
     >
-      {spots.map((left) => (
-        <Fragment key={left}>
-          <Chair className={`absolute top-0.5 ${left}`} />
-          <Chair flip className={`absolute bottom-0.5 ${left}`} />
+      {CHAIR_SPOTS.map((s) => (
+        <Fragment key={s.key}>
+          <Chair
+            className="absolute"
+            style={{
+              left: s.left,
+              top: `calc(2px + ${s.drop}%)`,
+              transform: `rotate(${s.angle}deg)`,
+            }}
+          />
+          <Chair
+            flip
+            className="absolute"
+            style={{
+              left: s.left,
+              bottom: `calc(2px + ${s.drop}%)`,
+              transform: `rotate(${-s.angle}deg)`,
+            }}
+          />
         </Fragment>
       ))}
     </div>
@@ -351,7 +409,6 @@ function Chairs() {
 export function Table({ view }: { view: GameView }) {
   const { state: g, me, act, exit, code, lost } = view;
   const player = g.players[g.active];
-  const tilt = useTilt();
 
   const [dragging, setDragging] = useState(false);
   const { stampName, pulse, pulseKey, shuffling } = useTableEffects(view);
@@ -411,6 +468,7 @@ export function Table({ view }: { view: GameView }) {
       onDragEnd={handleDragEnd}
     >
       <main className="floor relative flex flex-1 flex-col items-center gap-3 overflow-hidden px-3 pb-[max(1rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))] sm:px-6">
+        <FabricDefs />
         <Plant className="pointer-events-none absolute -right-10 top-28 hidden size-48 min-[1700px]:block" />
         <Plant className="pointer-events-none absolute -left-12 bottom-16 hidden size-52 min-[1700px]:block" />
         <Ambient pulse={pulse} pulseKey={pulseKey} />
@@ -450,218 +508,226 @@ export function Table({ view }: { view: GameView }) {
           </output>
         ) : null}
 
-        {/* De kamer: vloerkleed met daarop de ovale houten eettafel, van bovenaf, licht gekanteld */}
+        {/* De kamer: vloerkleed met daarop de ovale houten eettafel, van bovenaf */}
         <div className="relative flex w-full max-w-[1500px] flex-1 flex-col">
-          <motion.div
-            style={{
-              rotateX: tilt.rotateX,
-              rotateY: tilt.rotateY,
-              transformPerspective: 1800,
-              transformOrigin: "50% 35%",
-            }}
-            className="relative flex flex-1 flex-col px-2 py-6 md:px-6 md:py-[4.5rem]"
-          >
-            <div aria-hidden className="rug absolute inset-0 rounded-3xl" />
+          <div className="relative flex flex-1 flex-col px-2 py-6 md:px-6 md:py-[4.5rem]">
+            <div
+              aria-hidden
+              className="rug absolute -inset-x-3 inset-y-0 rounded-[2.5rem] md:rounded-[4.5rem]"
+            />
             <Chairs />
 
-            <section
-              aria-label="Speeltafel"
-              className="wood-top relative z-10 flex flex-1 flex-col justify-between gap-6 rounded-[2rem] p-4 sm:rounded-[50%/20%] sm:px-24 sm:py-12"
-            >
-              <OtherTimelines view={view} />
+            <div className="relative z-10 flex flex-1 flex-col">
+              <div
+                aria-hidden
+                className="wood-edge pointer-events-none absolute inset-x-0 -bottom-[11px] top-[10px] rounded-[2rem] sm:rounded-[50%/20%]"
+              />
+              <section
+                aria-label="Speeltafel"
+                className="wood-top relative flex flex-1 flex-col justify-between gap-6 rounded-[2rem] p-4 sm:rounded-[50%/20%] sm:px-24 sm:py-12"
+              >
+                <OtherTimelines view={view} />
 
-              <div className="flex flex-col items-center gap-4">
-                <Deck remaining={g.deckCount} shuffling={shuffling}>
-                  {!shuffling &&
-                  (placing || g.phase === "steal") &&
-                  g.currentId ? (
-                    <motion.div
-                      key={g.currentId}
-                      initial={{ y: -50, x: -60, rotate: -8, opacity: 0 }}
-                      animate={{ y: 0, x: 0, rotate: 0, opacity: 1 }}
-                      transition={{
-                        type: "spring",
-                        stiffness: 180,
-                        damping: 18,
-                      }}
-                    >
-                      <MysteryCard disabled={mysteryDisabled} />
-                    </motion.div>
-                  ) : null}
-                  {g.phase === "reveal" && g.result ? (
-                    <FlipCard key={g.result.song.id} result={g.result} />
-                  ) : null}
-                </Deck>
+                <div className="flex flex-col items-center gap-4">
+                  <Deck remaining={g.deckCount} shuffling={shuffling}>
+                    {!shuffling &&
+                    (placing || g.phase === "steal") &&
+                    g.currentId ? (
+                      <motion.div
+                        key={g.currentId}
+                        initial={{ y: -50, x: -60, rotate: -8, opacity: 0 }}
+                        animate={{ y: 0, x: 0, rotate: 0, opacity: 1 }}
+                        transition={{
+                          type: "spring",
+                          stiffness: 180,
+                          damping: 18,
+                        }}
+                      >
+                        <MysteryCard disabled={mysteryDisabled} />
+                      </motion.div>
+                    ) : null}
+                    {g.phase === "reveal" && g.result ? (
+                      <FlipCard key={g.result.song.id} result={g.result} />
+                    ) : null}
+                  </Deck>
 
-                {musicActive ? <MusicControls /> : null}
+                  {musicActive ? <MusicControls /> : null}
 
-                <div
-                  className="flex min-h-12 flex-col items-center gap-3 text-center"
-                  aria-live="polite"
-                >
-                  {placing ? (
-                    <>
-                      <p className={`${PLATE} font-semibold`}>
-                        {myTurnToPlace
-                          ? me === null
-                            ? `${player.name}, waar hoort dit nummer?`
-                            : "Jij bent aan de beurt: waar hoort dit nummer?"
-                          : `${player.name} kiest een plek voor dit nummer.`}
-                        <span className="block text-sm font-normal text-white/80">
+                  <div
+                    className="flex min-h-12 flex-col items-center gap-3 text-center"
+                    aria-live="polite"
+                  >
+                    {placing ? (
+                      <>
+                        <p className={`${PLATE} font-semibold`}>
                           {myTurnToPlace
-                            ? "Sleep het kaartje naar de tijdlijn of tik op een plus-knop. "
-                            : "Luister goed. Misschien wil je straks HITSTER! roepen. "}
-                          ({g.deckCount + 1} kaartjes in de stapel)
-                        </span>
-                      </p>
-                      {myTurnToPlace && g.tokensEnabled ? (
-                        <button
-                          type="button"
-                          onClick={() => act({ type: "skip" })}
-                          disabled={player.tokens < 1 || g.deckCount === 0}
-                          className={GHOST_BUTTON}
-                        >
-                          <SkipForward className="size-4" aria-hidden />
-                          Ander nummer (1 token)
-                        </button>
-                      ) : null}
-                    </>
-                  ) : null}
-
-                  {stealer ? (
-                    <div className="flex flex-col items-center gap-3">
-                      <p className={`${PLATE} font-semibold`}>
-                        {myTurnToSteal
-                          ? me === null
-                            ? `${stealer.name}, wil je stelen?`
-                            : "Wil jij stelen?"
-                          : `${stealer.name} bedenkt of er gestolen wordt…`}
-                        <span className="block text-sm font-normal text-white/80">
-                          Kost 1 token. Je kiest een andere plek. Heeft{" "}
-                          {player.name} het fout, dan krijg jij het kaartje als
-                          jouw plek klopt.
-                        </span>
-                      </p>
-                      {myTurnToSteal ? (
-                        g.stealing ? (
-                          <p className={`${PLATE} text-sm text-gold`}>
-                            Kies nu een plek in de tijdlijn van {player.name}.
-                          </p>
-                        ) : (
-                          <div className="flex gap-2">
-                            <button
-                              type="button"
-                              onClick={() => act({ type: "beginSteal" })}
-                              className="min-h-12 rounded-xl bg-gold px-6 text-lg font-black text-black hover:brightness-110"
-                            >
-                              HITSTER! (1 token)
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => act({ type: "pass" })}
-                              className="min-h-12 rounded-xl bg-stone-950/80 px-5 font-semibold text-white hover:bg-stone-950"
-                            >
-                              Pas
-                            </button>
-                          </div>
-                        )
-                      ) : null}
-                    </div>
-                  ) : null}
-
-                  {g.phase === "reveal" && g.result ? (
-                    <>
-                      <p className={`${PLATE} font-semibold`}>
-                        {resultMessage(g.result, g.players, player.id)}
-                      </p>
-                      {isMine(player.id) ? (
-                        <div className="flex flex-wrap items-center justify-center gap-2">
-                          {g.tokensEnabled ? (
-                            <button
-                              type="button"
-                              onClick={() => act({ type: "claimBonus" })}
-                              disabled={
-                                g.bonusClaimed || player.tokens >= MAX_TOKENS
-                              }
-                              className={GHOST_BUTTON}
-                            >
-                              {g.bonusClaimed
-                                ? "Token ontvangen"
-                                : "Artiest en titel goed geraden? +1 token"}
-                            </button>
-                          ) : null}
-                          <button
-                            type="button"
-                            onClick={() => act({ type: "next" })}
-                            className="inline-flex min-h-12 items-center gap-2 rounded-xl bg-gold px-6 py-2 font-bold text-black hover:brightness-110"
-                          >
-                            {lastCard ? "Bekijk de uitslag" : "Volgende beurt"}
-                            <ArrowRight className="size-5" aria-hidden />
-                          </button>
-                        </div>
-                      ) : (
-                        <p className="text-sm text-white/90">
-                          <span className={PLATE}>
-                            Wachten tot {player.name} verdergaat.
+                            ? me === null
+                              ? `${player.name}, waar hoort dit nummer?`
+                              : "Jij bent aan de beurt: waar hoort dit nummer?"
+                            : `${player.name} kiest een plek voor dit nummer.`}
+                          <span className="block text-sm font-normal text-white/80">
+                            {myTurnToPlace
+                              ? "Sleep het kaartje naar de tijdlijn of tik op een plus-knop. "
+                              : "Luister goed. Misschien wil je straks HITSTER! roepen. "}
+                            ({g.deckCount + 1} kaartjes in de stapel)
                           </span>
                         </p>
-                      )}
-                    </>
-                  ) : null}
-                </div>
-              </div>
+                        {myTurnToPlace && g.tokensEnabled ? (
+                          <button
+                            type="button"
+                            onClick={() => act({ type: "skip" })}
+                            disabled={player.tokens < 1 || g.deckCount === 0}
+                            className={GHOST_BUTTON}
+                          >
+                            <SkipForward className="size-4" aria-hidden />
+                            Ander nummer (1 token)
+                          </button>
+                        ) : null}
+                      </>
+                    ) : null}
 
-              {/* Tijdlijn van de speler die aan de beurt is */}
-              <div>
-                <p className="mx-auto mb-2 w-fit rounded-full bg-stone-950/75 px-4 py-1 text-sm font-semibold uppercase tracking-wide text-white">
-                  <span
-                    aria-hidden
-                    className="mr-2 inline-block size-2.5 rounded-full"
-                    style={{ background: playerColor(player.id) }}
-                  />
-                  Tijdlijn van {player.name}
-                  {me === player.id ? " (jij)" : ""}
-                </p>
-                <div className="w-full overflow-x-auto pb-3 pt-2">
-                  <ul className="mx-auto flex w-max items-center gap-2 px-2">
-                    {Array.from(
-                      { length: player.timeline.length + 1 },
-                      (_, i) => {
-                        const song = player.timeline[i];
-                        const takenBy = taken.get(i);
-                        const takenPlayer =
-                          takenBy === undefined
-                            ? undefined
-                            : g.players.find((p) => p.id === takenBy);
-                        return (
-                          <Fragment key={song?.id ?? "end"}>
-                            {g.phase === "steal" && takenPlayer ? (
-                              <li>
-                                <TakenMarker
-                                  name={takenPlayer.name}
-                                  color={playerColor(takenPlayer.id)}
-                                />
-                              </li>
-                            ) : showSlots ? (
-                              <li>
-                                <Slot
-                                  index={i}
-                                  label={describeSlot(player.timeline, i)}
-                                  onPlace={onSlot}
-                                />
-                              </li>
-                            ) : null}
-                            {song ? (
-                              <motion.li
-                                initial={{ scale: 0.6, opacity: 0 }}
-                                animate={{ scale: 1, opacity: 1 }}
-                                transition={{
-                                  type: "spring",
-                                  stiffness: 220,
-                                  damping: 20,
-                                }}
+                    {stealer ? (
+                      <div className="flex flex-col items-center gap-3">
+                        <p className={`${PLATE} font-semibold`}>
+                          {myTurnToSteal
+                            ? me === null
+                              ? `${stealer.name}, wil je stelen?`
+                              : "Wil jij stelen?"
+                            : `${stealer.name} bedenkt of er gestolen wordt…`}
+                          <span className="block text-sm font-normal text-white/80">
+                            Kost 1 token. Je kiest een andere plek. Heeft{" "}
+                            {player.name} het fout, dan krijg jij het kaartje
+                            als jouw plek klopt.
+                          </span>
+                        </p>
+                        {myTurnToSteal ? (
+                          g.stealing ? (
+                            <p className={`${PLATE} text-sm text-gold`}>
+                              Kies nu een plek in de tijdlijn van {player.name}.
+                            </p>
+                          ) : (
+                            <div className="flex gap-2">
+                              <button
+                                type="button"
+                                onClick={() => act({ type: "beginSteal" })}
+                                className="min-h-12 rounded-xl bg-gold px-6 text-lg font-black text-black hover:brightness-110"
                               >
-                                <TiltCard>
+                                HITSTER! (1 token)
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => act({ type: "pass" })}
+                                className="min-h-12 rounded-xl bg-stone-950/80 px-5 font-semibold text-white hover:bg-stone-950"
+                              >
+                                Pas
+                              </button>
+                            </div>
+                          )
+                        ) : null}
+                      </div>
+                    ) : null}
+
+                    {g.phase === "reveal" && g.result ? (
+                      <>
+                        <p className={`${PLATE} font-semibold`}>
+                          {resultMessage(g.result, g.players, player.id)}
+                        </p>
+                        {isMine(player.id) ? (
+                          <div className="flex flex-wrap items-center justify-center gap-2">
+                            {g.tokensEnabled ? (
+                              <button
+                                type="button"
+                                onClick={() => act({ type: "claimBonus" })}
+                                disabled={
+                                  g.bonusClaimed || player.tokens >= MAX_TOKENS
+                                }
+                                className={GHOST_BUTTON}
+                              >
+                                {g.bonusClaimed
+                                  ? "Token ontvangen"
+                                  : "Artiest en titel goed geraden? +1 token"}
+                              </button>
+                            ) : null}
+                            <button
+                              type="button"
+                              onClick={() => act({ type: "next" })}
+                              className="inline-flex min-h-12 items-center gap-2 rounded-xl bg-gold px-6 py-2 font-bold text-black hover:brightness-110"
+                            >
+                              {lastCard
+                                ? "Bekijk de uitslag"
+                                : "Volgende beurt"}
+                              <ArrowRight className="size-5" aria-hidden />
+                            </button>
+                          </div>
+                        ) : (
+                          <p className="text-sm text-white/90">
+                            <span className={PLATE}>
+                              Wachten tot {player.name} verdergaat.
+                            </span>
+                          </p>
+                        )}
+                      </>
+                    ) : null}
+                  </div>
+                </div>
+
+                {/* Tijdlijn van de speler die aan de beurt is */}
+                <div>
+                  <p className="mx-auto mb-2 w-fit rounded-full bg-stone-950/75 px-4 py-1 text-sm font-semibold uppercase tracking-wide text-white">
+                    <span
+                      aria-hidden
+                      className="mr-2 inline-block size-2.5 rounded-full"
+                      style={{ background: playerColor(player.id) }}
+                    />
+                    Tijdlijn van {player.name}
+                    {me === player.id ? " (jij)" : ""}
+                  </p>
+                  <div className="w-full overflow-x-auto pb-3 pt-2">
+                    <ul className="mx-auto flex w-max items-center gap-2 px-2">
+                      {Array.from(
+                        { length: player.timeline.length + 1 },
+                        (_, i) => {
+                          const song = player.timeline[i];
+                          const takenBy = taken.get(i);
+                          const takenPlayer =
+                            takenBy === undefined
+                              ? undefined
+                              : g.players.find((p) => p.id === takenBy);
+                          return (
+                            <Fragment key={song?.id ?? "end"}>
+                              {g.phase === "steal" && takenPlayer ? (
+                                <li>
+                                  {takenPlayer.id === player.id ? (
+                                    <PlacedCard
+                                      name={takenPlayer.name}
+                                      color={playerColor(takenPlayer.id)}
+                                    />
+                                  ) : (
+                                    <StealToken
+                                      name={takenPlayer.name}
+                                      color={playerColor(takenPlayer.id)}
+                                    />
+                                  )}
+                                </li>
+                              ) : showSlots ? (
+                                <li>
+                                  <Slot
+                                    index={i}
+                                    label={describeSlot(player.timeline, i)}
+                                    onPlace={onSlot}
+                                  />
+                                </li>
+                              ) : null}
+                              {song ? (
+                                <motion.li
+                                  initial={{ scale: 0.6, opacity: 0 }}
+                                  animate={{ scale: 1, opacity: 1 }}
+                                  transition={{
+                                    type: "spring",
+                                    stiffness: 220,
+                                    damping: 20,
+                                  }}
+                                >
                                   <SongCard
                                     song={song}
                                     highlight={
@@ -670,22 +736,22 @@ export function Table({ view }: { view: GameView }) {
                                       g.result.song.id === song.id
                                     }
                                   />
-                                </TiltCard>
-                              </motion.li>
-                            ) : null}
-                          </Fragment>
-                        );
-                      },
-                    )}
-                  </ul>
+                                </motion.li>
+                              ) : null}
+                            </Fragment>
+                          );
+                        },
+                      )}
+                    </ul>
+                  </div>
                 </div>
-              </div>
-            </section>
-          </motion.div>
+              </section>
+            </div>
+          </div>
         </div>
       </main>
 
-      {/* Het sleepkaartje staat buiten de gekantelde tafel, zodat het precies onder je vinger blijft. */}
+      {/* Het sleepkaartje blijft precies onder je vinger. */}
       <DragOverlay dropAnimation={null}>
         {dragging ? (
           <div className="rotate-3 scale-105">

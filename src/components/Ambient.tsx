@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  motion,
-  useMotionValue,
-  useReducedMotion,
-  useSpring,
-} from "motion/react";
-import { useEffect } from "react";
+import { motion } from "motion/react";
 
 export type Pulse = "good" | "bad" | "steal" | null;
 
@@ -33,7 +27,7 @@ const DUST = [
 ];
 
 /**
- * Sfeerlaag over de kamer: een warme lamp die zacht meebeweegt met de muis,
+ * Sfeerlaag over de kamer: een warme lamp die stilhangt,
  * stofjes in het licht, een vignet en een lichtflits bij goed, fout of stelen.
  * Het zit boven de tafel maar vangt geen klikken op.
  */
@@ -44,22 +38,6 @@ export function Ambient({
   pulse: Pulse;
   pulseKey: number;
 }) {
-  const reduced = useReducedMotion();
-  const px = useMotionValue(0);
-  const py = useMotionValue(0);
-  const x = useSpring(px, { stiffness: 40, damping: 20 });
-  const y = useSpring(py, { stiffness: 40, damping: 20 });
-
-  useEffect(() => {
-    if (reduced) return;
-    function onMove(e: PointerEvent) {
-      px.set((e.clientX / window.innerWidth - 0.5) * 60);
-      py.set((e.clientY / window.innerHeight - 0.5) * 40);
-    }
-    window.addEventListener("pointermove", onMove);
-    return () => window.removeEventListener("pointermove", onMove);
-  }, [reduced, px, py]);
-
   return (
     <>
       {/* Hanglamp: ligt onder de tafel en verlicht vloer en kleed, zodat kaartjes en tekst scherp blijven */}
@@ -67,12 +45,9 @@ export function Ambient({
         aria-hidden
         className="pointer-events-none absolute inset-0 z-0 overflow-hidden"
       >
-        <motion.div
-          style={{ x, y }}
-          className="absolute left-1/2 top-[40%] h-[130%] w-[100%] -translate-x-1/2 -translate-y-1/2 mix-blend-soft-light"
-        >
+        <div className="absolute left-1/2 top-[40%] h-[130%] w-[100%] -translate-x-1/2 -translate-y-1/2 mix-blend-soft-light">
           <div className="size-full bg-[radial-gradient(ellipse_at_center,rgba(255,226,170,0.9),rgba(255,226,170,0.35)_40%,transparent_70%)]" />
-        </motion.div>
+        </div>
       </div>
       <Overlay pulse={pulse} pulseKey={pulseKey} />
     </>

@@ -50,9 +50,6 @@ const SLOT_HEIGHT = "h-(--card)";
 const PLATE =
   "rounded-2xl bg-stone-950/75 px-4 py-2 text-white shadow-lg backdrop-blur-sm";
 
-const GHOST_BUTTON =
-  "inline-flex min-h-11 items-center gap-2 rounded-xl bg-stone-950/80 px-4 text-sm font-semibold text-white hover:bg-stone-950 disabled:cursor-not-allowed disabled:opacity-50";
-
 function Slot({
   index,
   label,
@@ -379,24 +376,30 @@ function OtherTimelines({ view }: { view: GameView }) {
       }}
     >
       {others.map((p) => (
-        <div key={p.id} className="min-w-0 [container-type:inline-size]">
-          <p className="mx-auto mb-1.5 w-fit rounded-full bg-stone-950/75 px-3 py-0.5 text-xs font-semibold text-white">
-            <span
-              aria-hidden
-              className="mr-1.5 inline-block size-2 rounded-full"
-              style={{ background: playerColor(p.id) }}
-            />
-            {p.name}
-            {me === p.id ? " (jij)" : ""} · {p.timeline.length}/{g.target}
-          </p>
-          <div className="overflow-x-auto pb-2">
+        <div
+          key={p.id}
+          className="min-w-0 overflow-y-hidden overflow-x-auto pt-3 [container-type:inline-size]"
+        >
+          <div
+            className="mat relative mx-auto w-max rounded-xl px-2 pb-1.5 pt-4"
+            style={{ "--mat": playerColor(p.id) } as React.CSSProperties}
+          >
+            <p className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap rounded-full bg-stone-950/90 px-3 py-0.5 text-xs font-semibold text-white shadow-md">
+              <span
+                aria-hidden
+                className="mr-1.5 inline-block size-2 rounded-full"
+                style={{ background: playerColor(p.id) }}
+              />
+              {p.name}
+              {me === p.id ? " (jij)" : ""} · {p.timeline.length}/{g.target}
+            </p>
             <ul
               className="mx-auto flex w-max items-center gap-1.5 px-1"
               style={
                 {
                   "--n": Math.max(p.timeline.length, 1),
                   "--card":
-                    "max(4.5rem, min(var(--card-base), calc((100cqw - 1rem - var(--n) * 0.4rem) / var(--n) / 0.6)))",
+                    "max(4.5rem, min(var(--card-base), calc((100cqw - 2rem - var(--n) * 0.4rem) / var(--n) / 0.6)))",
                 } as React.CSSProperties
               }
               aria-label={`Tijdlijn van ${p.name}`}
@@ -535,6 +538,182 @@ export function Table({ view }: { view: GameView }) {
 
   const mysteryDisabled = !showSlots;
 
+  const PRIMARY =
+    "inline-flex min-h-12 items-center gap-2 rounded-xl bg-gold px-3 py-2 text-sm font-black text-black shadow-lg hover:brightness-110 sm:px-5 sm:text-base";
+  const SECONDARY =
+    "inline-flex min-h-11 items-center gap-2 rounded-xl bg-stone-950/80 px-3 text-sm font-semibold text-white shadow-lg hover:bg-stone-950 disabled:cursor-not-allowed disabled:opacity-50 sm:px-4";
+
+  // Wat er gebeurt: één compacte regel onder de stapel.
+  let caption: ReactNode = null;
+  if (placing) {
+    caption = (
+      <p className={`${PLATE} text-center font-semibold`}>
+        {myTurnToPlace
+          ? me === null
+            ? `${player.name}, waar hoort dit nummer?`
+            : "Jij bent aan de beurt: waar hoort dit nummer?"
+          : `${player.name} kiest een plek voor dit nummer.`}
+        <span className="plate-hint block text-sm font-normal text-white/80">
+          {myTurnToPlace
+            ? pickedCard
+              ? "Twijfel je? Sleep het kaartje of tik op een andere plus-knop. "
+              : "Sleep het kaartje naar de tijdlijn of tik op een plus-knop. "
+            : "Luister goed. Misschien wil je straks SPOT-ON! roepen. "}
+          ({g.deckCount + 1} kaartjes in de stapel)
+        </span>
+      </p>
+    );
+  } else if (g.phase === "steal") {
+    caption =
+      g.stealing && stealer ? (
+        <p className={`${PLATE} text-center font-semibold`}>
+          {myTurnToSteal
+            ? me === null
+              ? `${stealer.name}, kies een plek voor je token.`
+              : "Kies een plek voor je token."
+            : `${stealer.name} legt een token neer…`}
+          <span className="plate-hint block text-sm font-normal text-white/80">
+            {pickedCoin
+              ? "Tik op een andere plus-knop om te verschuiven, of op het token om het terug te nemen."
+              : `Kost 1 token. Kies een plek in de tijdlijn van ${player.name}.`}
+          </span>
+        </p>
+      ) : (
+        <p className={`${PLATE} text-center font-semibold`}>
+          Wil iemand stelen?
+          <span className="plate-hint block text-sm font-normal text-white/80">
+            Tik op je eigen naam om SPOT-ON! te roepen (1 token), of kies
+            "Niemand steelt".
+          </span>
+        </p>
+      );
+  } else if (g.phase === "reveal" && g.result) {
+    caption = (
+      <p className={`${PLATE} text-center font-semibold`}>
+        {resultMessage(g.result, g.players, player.id)}
+        {isMine(player.id) ? null : (
+          <span className="block text-sm font-normal text-white/80">
+            Wachten tot {player.name} verdergaat.
+          </span>
+        )}
+      </p>
+    );
+  }
+
+  // De knoppen rechts van de stapel.
+  let actions: ReactNode = null;
+  if (placing) {
+    actions = (
+      <>
+        {myTurnToPlace && pickedCard ? (
+          <button
+            type="button"
+            onClick={() => act({ type: "confirm" })}
+            className={PRIMARY}
+          >
+            <Check className="size-5 shrink-0" aria-hidden />
+            <span className="sm:hidden">Leg neer</span>
+            <span className="hidden sm:inline">Leg het kaartje neer</span>
+          </button>
+        ) : null}
+        {myTurnToPlace && g.tokensEnabled ? (
+          <button
+            type="button"
+            onClick={() => act({ type: "skip" })}
+            disabled={player.tokens < 1 || g.deckCount === 0}
+            className={SECONDARY}
+          >
+            <SkipForward className="size-4 shrink-0" aria-hidden />
+            <span className="sm:hidden">Ander nummer (1)</span>
+            <span className="hidden sm:inline">Ander nummer (1 token)</span>
+          </button>
+        ) : null}
+      </>
+    );
+  } else if (g.phase === "steal") {
+    actions =
+      g.stealing && stealer ? (
+        myTurnToSteal ? (
+          <>
+            {pickedCoin ? (
+              <button
+                type="button"
+                onClick={() => act({ type: "stealConfirm" })}
+                className={PRIMARY}
+              >
+                <Check className="size-5 shrink-0" aria-hidden />
+                Token neerleggen
+              </button>
+            ) : null}
+            <button
+              type="button"
+              onClick={() => act({ type: "pass", playerId: stealer.id })}
+              className={SECONDARY}
+            >
+              Toch niet stelen
+            </button>
+          </>
+        ) : null
+      ) : (
+        <>
+          {g.stealQueue.map((id) => {
+            const p = g.players.find((q) => q.id === id);
+            if (!p) return null;
+            return (
+              <button
+                key={id}
+                type="button"
+                disabled={!isMine(id)}
+                onClick={() => act({ type: "beginSteal", playerId: id })}
+                className={`${PRIMARY} disabled:cursor-default disabled:opacity-60 disabled:hover:brightness-100`}
+              >
+                <span
+                  aria-hidden
+                  className="size-3 shrink-0 rounded-full ring-1 ring-black/40"
+                  style={{ background: playerColor(id) }}
+                />
+                {p.name}: SPOT-ON!
+              </button>
+            );
+          })}
+          {me === null || me === player.id || g.stealQueue.includes(me) ? (
+            <button
+              type="button"
+              onClick={() => act({ type: "passAll" })}
+              className={SECONDARY}
+            >
+              Niemand steelt
+            </button>
+          ) : null}
+        </>
+      );
+  } else if (g.phase === "reveal" && g.result && isMine(player.id)) {
+    actions = (
+      <>
+        <button
+          type="button"
+          onClick={() => act({ type: "next" })}
+          className={PRIMARY}
+        >
+          {lastCard ? "Bekijk de uitslag" : "Volgende beurt"}
+          <ArrowRight className="size-5 shrink-0" aria-hidden />
+        </button>
+        {g.tokensEnabled ? (
+          <button
+            type="button"
+            onClick={() => act({ type: "claimBonus" })}
+            disabled={g.bonusClaimed || player.tokens >= MAX_TOKENS}
+            className={SECONDARY}
+          >
+            {g.bonusClaimed
+              ? "Token ontvangen"
+              : "Artiest en titel goed? +1 token"}
+          </button>
+        ) : null}
+      </>
+    );
+  }
+
   return (
     <DndContext
       sensors={sensors}
@@ -606,244 +785,85 @@ export function Table({ view }: { view: GameView }) {
               >
                 <OtherTimelines view={view} />
 
-                <div className="flex flex-col items-center justify-center gap-[clamp(0.5rem,1.5dvh,1rem)] sm:flex-row sm:gap-10">
-                  <div className="flex flex-col items-center gap-2">
-                    <div className="relative sm:mr-[5.25rem]">
-                      <Deck remaining={g.deckCount} shuffling={shuffling}>
-                        {!shuffling &&
-                        !pickedCard &&
-                        (placing || g.phase === "steal") &&
-                        g.currentId ? (
-                          <motion.div
-                            key={g.currentId}
-                            initial={{ y: -50, x: -60, rotate: -8, opacity: 0 }}
-                            animate={{ y: 0, x: 0, rotate: 0, opacity: 1 }}
-                            transition={{
-                              type: "spring",
-                              stiffness: 180,
-                              damping: 18,
-                            }}
-                          >
-                            <MysteryCard disabled={mysteryDisabled} />
-                          </motion.div>
-                        ) : null}
-                        {pickedCard && g.deckCount > 0 ? <CardBack /> : null}
-                        {g.phase === "reveal" && g.result ? (
-                          <FlipCard key={g.result.song.id} result={g.result} />
-                        ) : null}
-                      </Deck>
-                      {placing ? (
-                        <div className="absolute left-full top-1/2 ml-3 -translate-y-1/2 sm:ml-5">
-                          <TurnTimer
-                            timer={g.timer}
-                            runKey={g.currentId}
-                            withSound={me === null}
-                            onTimeUp={stopMusicAtTimeUp}
-                          />
-                        </div>
-                      ) : null}
-                    </div>
-
+                <div className="grid w-full grid-cols-[1fr_auto_1fr] items-center gap-x-[clamp(0.5rem,2.5vw,3rem)] gap-y-[clamp(0.25rem,1dvh,0.75rem)]">
+                  <div className="flex flex-col items-center gap-2 justify-self-end">
+                    {placing ? (
+                      <TurnTimer
+                        timer={g.timer}
+                        runKey={g.currentId}
+                        withSound={me === null}
+                        onTimeUp={stopMusicAtTimeUp}
+                      />
+                    ) : null}
                     {musicActive ? <MusicControls /> : null}
                   </div>
 
                   <div
-                    className="flex min-h-12 max-w-[34rem] flex-col items-center gap-2 text-center"
+                    className="relative"
+                    style={
+                      {
+                        "--card": "calc(var(--card-base) * 1.15)",
+                      } as React.CSSProperties
+                    }
+                  >
+                    <div
+                      aria-hidden
+                      className="pointer-events-none absolute -inset-[38%] rounded-full bg-[radial-gradient(closest-side,rgba(255,228,170,0.42),transparent)]"
+                    />
+                    <Deck remaining={g.deckCount} shuffling={shuffling}>
+                      {!shuffling &&
+                      !pickedCard &&
+                      (placing || g.phase === "steal") &&
+                      g.currentId ? (
+                        <motion.div
+                          key={g.currentId}
+                          initial={{ y: -50, x: -60, rotate: -8, opacity: 0 }}
+                          animate={{ y: 0, x: 0, rotate: 0, opacity: 1 }}
+                          transition={{
+                            type: "spring",
+                            stiffness: 180,
+                            damping: 18,
+                          }}
+                        >
+                          <MysteryCard disabled={mysteryDisabled} />
+                        </motion.div>
+                      ) : null}
+                      {pickedCard && g.deckCount > 0 ? <CardBack /> : null}
+                      {g.phase === "reveal" && g.result ? (
+                        <FlipCard key={g.result.song.id} result={g.result} />
+                      ) : null}
+                    </Deck>
+                  </div>
+
+                  <div className="flex flex-col items-start gap-2 justify-self-start">
+                    {actions}
+                  </div>
+
+                  <div
+                    className="col-span-3 flex min-h-10 justify-center"
                     aria-live="polite"
                   >
-                    {placing ? (
-                      <>
-                        <p className={`${PLATE} font-semibold`}>
-                          {myTurnToPlace
-                            ? me === null
-                              ? `${player.name}, waar hoort dit nummer?`
-                              : "Jij bent aan de beurt: waar hoort dit nummer?"
-                            : `${player.name} kiest een plek voor dit nummer.`}
-                          <span className="plate-hint block text-sm font-normal text-white/80">
-                            {myTurnToPlace
-                              ? pickedCard
-                                ? "Twijfel je? Tik op een andere plus-knop om het kaartje te verschuiven. "
-                                : "Sleep het kaartje naar de tijdlijn of tik op een plus-knop. "
-                              : "Luister goed. Misschien wil je straks SPOT-ON! roepen. "}
-                            ({g.deckCount + 1} kaartjes in de stapel)
-                          </span>
-                        </p>
-                        {myTurnToPlace && pickedCard ? (
-                          <button
-                            type="button"
-                            onClick={() => act({ type: "confirm" })}
-                            className="inline-flex min-h-12 items-center gap-2 rounded-xl bg-gold px-6 py-2 font-black text-black hover:brightness-110"
-                          >
-                            <Check className="size-5" aria-hidden />
-                            Zeker weten, leg het kaartje neer
-                          </button>
-                        ) : null}
-                        {myTurnToPlace && g.tokensEnabled ? (
-                          <button
-                            type="button"
-                            onClick={() => act({ type: "skip" })}
-                            disabled={player.tokens < 1 || g.deckCount === 0}
-                            className={GHOST_BUTTON}
-                          >
-                            <SkipForward className="size-4" aria-hidden />
-                            Ander nummer (1 token)
-                          </button>
-                        ) : null}
-                      </>
-                    ) : null}
-
-                    {g.phase === "steal" ? (
-                      <div className="flex flex-col items-center gap-3">
-                        {g.stealing && stealer ? (
-                          <>
-                            <p className={`${PLATE} font-semibold`}>
-                              {myTurnToSteal
-                                ? me === null
-                                  ? `${stealer.name}, kies een plek voor je token.`
-                                  : "Kies een plek voor je token."
-                                : `${stealer.name} legt een token neer…`}
-                              <span className="plate-hint block text-sm font-normal text-white/80">
-                                Kost 1 token. Heeft {player.name} het fout, dan
-                                krijg jij het kaartje als jouw plek klopt.
-                              </span>
-                            </p>
-                            {myTurnToSteal ? (
-                              <div className="flex flex-col items-center gap-2">
-                                <p className={`${PLATE} text-sm text-gold`}>
-                                  {pickedCoin
-                                    ? "Tik op een andere plus-knop om je token te verschuiven, of tik op het token om het terug te nemen."
-                                    : `Kies nu een plek in de tijdlijn van ${player.name}.`}
-                                </p>
-                                {pickedCoin ? (
-                                  <button
-                                    type="button"
-                                    onClick={() =>
-                                      act({ type: "stealConfirm" })
-                                    }
-                                    className="inline-flex min-h-12 items-center gap-2 rounded-xl bg-gold px-6 py-2 font-black text-black hover:brightness-110"
-                                  >
-                                    <Check className="size-5" aria-hidden />
-                                    Token definitief neerleggen
-                                  </button>
-                                ) : null}
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    act({ type: "pass", playerId: stealer.id })
-                                  }
-                                  className="min-h-11 rounded-xl bg-stone-950/80 px-4 text-sm font-semibold text-white hover:bg-stone-950"
-                                >
-                                  Toch niet stelen
-                                </button>
-                              </div>
-                            ) : null}
-                          </>
-                        ) : (
-                          <>
-                            <p className={`${PLATE} font-semibold`}>
-                              Wil iemand stelen?
-                              <span className="plate-hint block text-sm font-normal text-white/80">
-                                Tik op je eigen naam om SPOT-ON! te roepen (1
-                                token). Stelen alle anderen niet, tik dan op
-                                "Niemand steelt".
-                              </span>
-                            </p>
-                            <div className="flex flex-wrap items-center justify-center gap-2">
-                              {g.stealQueue.map((id) => {
-                                const p = g.players.find((q) => q.id === id);
-                                if (!p) return null;
-                                return (
-                                  <button
-                                    key={id}
-                                    type="button"
-                                    disabled={!isMine(id)}
-                                    onClick={() =>
-                                      act({ type: "beginSteal", playerId: id })
-                                    }
-                                    className="inline-flex min-h-12 items-center gap-2 rounded-xl bg-gold px-5 font-black text-black hover:brightness-110 disabled:cursor-default disabled:opacity-60 disabled:hover:brightness-100"
-                                  >
-                                    <span
-                                      aria-hidden
-                                      className="size-3 rounded-full ring-1 ring-black/40"
-                                      style={{ background: playerColor(id) }}
-                                    />
-                                    {p.name}: SPOT-ON!
-                                  </button>
-                                );
-                              })}
-                              {me === null ||
-                              me === player.id ||
-                              g.stealQueue.includes(me) ? (
-                                <button
-                                  type="button"
-                                  onClick={() => act({ type: "passAll" })}
-                                  className="min-h-12 rounded-xl bg-stone-950/80 px-5 font-semibold text-white hover:bg-stone-950"
-                                >
-                                  Niemand steelt
-                                </button>
-                              ) : null}
-                            </div>
-                          </>
-                        )}
-                      </div>
-                    ) : null}
-
-                    {g.phase === "reveal" && g.result ? (
-                      <>
-                        <p className={`${PLATE} font-semibold`}>
-                          {resultMessage(g.result, g.players, player.id)}
-                        </p>
-                        {isMine(player.id) ? (
-                          <div className="flex flex-wrap items-center justify-center gap-2">
-                            {g.tokensEnabled ? (
-                              <button
-                                type="button"
-                                onClick={() => act({ type: "claimBonus" })}
-                                disabled={
-                                  g.bonusClaimed || player.tokens >= MAX_TOKENS
-                                }
-                                className={GHOST_BUTTON}
-                              >
-                                {g.bonusClaimed
-                                  ? "Token ontvangen"
-                                  : "Artiest en titel goed geraden? +1 token"}
-                              </button>
-                            ) : null}
-                            <button
-                              type="button"
-                              onClick={() => act({ type: "next" })}
-                              className="inline-flex min-h-12 items-center gap-2 rounded-xl bg-gold px-6 py-2 font-bold text-black hover:brightness-110"
-                            >
-                              {lastCard
-                                ? "Bekijk de uitslag"
-                                : "Volgende beurt"}
-                              <ArrowRight className="size-5" aria-hidden />
-                            </button>
-                          </div>
-                        ) : (
-                          <p className="text-sm text-white/90">
-                            <span className={PLATE}>
-                              Wachten tot {player.name} verdergaat.
-                            </span>
-                          </p>
-                        )}
-                      </>
-                    ) : null}
+                    {caption}
                   </div>
                 </div>
 
                 {/* Tijdlijn van de speler die aan de beurt is */}
-                <div>
-                  <p className="mx-auto mb-2 w-fit rounded-full bg-stone-950/75 px-4 py-1 text-sm font-semibold uppercase tracking-wide text-white">
-                    <span
-                      aria-hidden
-                      className="mr-2 inline-block size-2.5 rounded-full"
-                      style={{ background: playerColor(player.id) }}
-                    />
-                    Tijdlijn van {player.name}
-                    {me === player.id ? " (jij)" : ""}
-                  </p>
-                  <div className="w-full overflow-x-auto pb-3 pt-2 [container-type:inline-size]">
+                <div className="w-full overflow-y-hidden overflow-x-auto pb-1 pt-4 [container-type:inline-size]">
+                  <div
+                    className="mat relative mx-auto w-max rounded-2xl px-4 pb-2 pt-5"
+                    style={
+                      { "--mat": playerColor(player.id) } as React.CSSProperties
+                    }
+                  >
+                    <p className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap rounded-full bg-stone-950/90 px-4 py-1 text-sm font-semibold uppercase tracking-wide text-white shadow-md">
+                      <span
+                        aria-hidden
+                        className="mr-2 inline-block size-2.5 rounded-full"
+                        style={{ background: playerColor(player.id) }}
+                      />
+                      Tijdlijn van {player.name}
+                      {me === player.id ? " (jij)" : ""}
+                    </p>
                     <ul
                       className="mx-auto flex w-max items-center gap-2 px-2"
                       style={
@@ -854,7 +874,7 @@ export function Table({ view }: { view: GameView }) {
                             1,
                           ),
                           "--card":
-                            "max(4rem, min(var(--card-base), calc((100cqw - (var(--n) + 1) * 3.4rem - var(--n) * 0.5rem - 1rem) / var(--n))))",
+                            "max(4rem, min(var(--card-base), calc((100cqw - (var(--n) + 1) * 3.4rem - var(--n) * 0.5rem - 3rem) / var(--n))))",
                         } as React.CSSProperties
                       }
                     >

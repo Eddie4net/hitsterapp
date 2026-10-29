@@ -1,5 +1,5 @@
 import type { Song } from "@/game/types";
-import { LogoMark, Wordmark } from "./Logo";
+import { LogoMark } from "./Logo";
 
 /** Vierkante kaartjes met een zacht kleurverloop, zoals bij het bordspel. */
 const SIZE = "size-(--card)";
@@ -62,7 +62,7 @@ export function SongCard({
   );
 }
 
-/** Achterkant: het Spot-On-merkteken op diep paars, met een gouden lijst en het woord erboven. */
+/** Achterkant: het Spot-On-merkteken op diep paars, met een gouden lijst. */
 export function CardBack({ label }: { label?: string }) {
   return (
     <div
@@ -84,8 +84,7 @@ export function CardBack({ label }: { label?: string }) {
         aria-hidden
         className="absolute inset-[4px] rounded-[5px] border border-amber-200/35"
       />
-      <Wordmark className="absolute left-1/2 top-[6%] w-[58%] -translate-x-1/2" />
-      <LogoMark className="absolute inset-x-[12%] top-[16%] w-[76%] drop-shadow-[0_4px_8px_rgba(0,0,0,0.5)]" />
+      <LogoMark className="absolute inset-[11%] drop-shadow-[0_4px_8px_rgba(0,0,0,0.5)]" />
       {label ? (
         <p className="absolute inset-x-0 bottom-1 text-center text-xs font-bold text-white">
           <span className="rounded bg-black/70 px-2 py-0.5">{label}</span>

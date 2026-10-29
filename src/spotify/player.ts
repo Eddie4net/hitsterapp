@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { useSound } from "@/lib/feedback";
 import { getAccessToken } from "./auth";
 import { isMock } from "./config";
 
@@ -16,6 +17,7 @@ type SdkPlayer = {
   pause: () => Promise<void>;
   resume: () => Promise<void>;
   seek: (ms: number) => Promise<void>;
+  setVolume: (volume: number) => Promise<void>;
 };
 
 declare global {
@@ -45,7 +47,20 @@ export const usePlayer = create<PlayerState>(() => ({
   trackUri: null,
 }));
 
+const VOLUME = 0.8;
+const currentVolume = () => (useSound.getState().on ? VOLUME : 0);
+
 let player: SdkPlayer | null = null;
+let muteWatched = false;
+
+/** De geluidsknop dempt ook de muziek: het volume van de Spotify-speler volgt hem. */
+function watchMute() {
+  if (muteWatched) return;
+  muteWatched = true;
+  useSound.subscribe(() => {
+    void player?.setVolume(currentVolume()).catch(() => undefined);
+  });
+}
 let deviceId: string | null = null;
 let sdkPromise: Promise<void> | null = null;
 
@@ -69,6 +84,7 @@ const fail = (error: string) => usePlayer.setState({ status: "error", error });
 
 /** Maakt dit apparaat een Spotify-speler. Roep dit aan na een klik, zodat de browser geluid toestaat. */
 export async function connectPlayer(): Promise<boolean> {
+  watchMute();
   if (isMock()) {
     usePlayer.setState({ status: "ready", error: null });
     return true;
@@ -93,7 +109,7 @@ export async function connectPlayer(): Promise<boolean> {
       getOAuthToken: (cb) => {
         void getAccessToken().then((t) => cb(t ?? ""));
       },
-      volume: 0.8,
+      volume: currentVolume(),
     });
     player = sdk;
     const timer = setTimeout(() => {
@@ -105,6 +121,7 @@ export async function connectPlayer(): Promise<boolean> {
       resolve(ok);
     };
     sdk.addListener("ready", (payload) => {
+      void sdk.setVolume(currentVolume()).catch(() => undefined);
       deviceId = (payload as { device_id: string }).device_id;
       usePlayer.setState({ status: "ready", error: null });
       done(true);

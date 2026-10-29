@@ -36,6 +36,7 @@ import { useHostMusic } from "@/spotify/useHostMusic";
 import { Ambient } from "./Ambient";
 import { FullscreenToggle } from "./FullscreenToggle";
 import { HitsterStamp } from "./HitsterStamp";
+import { LogoMark, Wordmark } from "./Logo";
 import { MusicControls } from "./MusicControls";
 import { Chair, FabricDefs } from "./Room";
 import { RulesButton } from "./RulesDialog";
@@ -43,7 +44,7 @@ import { CardBack, CompactCard, SongCard, TokenCoin } from "./SongCard";
 import { SoundToggle } from "./SoundToggle";
 import { TurnTimer } from "./TurnTimer";
 
-const SLOT_HEIGHT = "h-32 sm:h-40";
+const SLOT_HEIGHT = "h-(--card)";
 
 /** Donker doorschijnend vlak: houdt tekst op het houten blad goed leesbaar. */
 const PLATE =
@@ -214,7 +215,7 @@ function FlipCard({ result }: { result: Result }) {
       animate={{ rotateY: 0 }}
       transition={{ duration: 0.55, ease: "easeOut" }}
       style={{ transformStyle: "preserve-3d" }}
-      className="relative size-32 sm:size-40"
+      className="relative size-(--card)"
     >
       <div
         style={{ backfaceVisibility: "hidden" }}
@@ -245,7 +246,7 @@ function Deck({
   const layers = Math.min(6, Math.max(remaining, 0));
   return (
     <div
-      className="relative size-32 drop-shadow-[6px_12px_10px_rgba(0,0,0,0.4)] sm:size-40"
+      className="relative size-(--card) drop-shadow-[6px_12px_10px_rgba(0,0,0,0.4)]"
       style={{ perspective: 900 }}
     >
       {Array.from({ length: layers }, (_, i) => {
@@ -425,7 +426,7 @@ function chairSpot(p: number) {
   const root = Math.sqrt(1 - u * u);
   return {
     key: p,
-    left: `calc(${p * 100}% - 5.5rem)`,
+    left: `calc(${p * 100}% - var(--chair) / 2)`,
     drop: RY * (1 - root) * 100 * TABLE_SHARE,
     angle: (Math.atan((RY * ASPECT * 2 * u) / root) * 180) / Math.PI,
   };
@@ -438,7 +439,7 @@ function Chairs() {
   return (
     <div
       aria-hidden
-      className="pointer-events-none absolute inset-0 hidden md:block"
+      className="chairs pointer-events-none absolute inset-0 hidden md:block"
     >
       {CHAIR_SPOTS.map((s) => (
         <Fragment key={s.key}>
@@ -534,14 +535,16 @@ export function Table({ view }: { view: GameView }) {
       onDragCancel={() => setDragging(false)}
       onDragEnd={handleDragEnd}
     >
-      <main className="floor relative flex flex-1 flex-col items-center gap-3 overflow-hidden px-3 pb-[max(1rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))] sm:px-6">
+      <main className="floor fit relative flex h-dvh shrink-0 flex-col items-center gap-[clamp(0.25rem,1.2dvh,0.75rem)] overflow-hidden px-3 pb-[max(1rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))] sm:px-6">
         <FabricDefs />
         <Ambient pulse={pulse} pulseKey={pulseKey} />
 
-        <header className="relative z-30 flex w-full max-w-[1500px] flex-col items-center gap-3 rounded-2xl bg-stone-950/85 p-3 text-white shadow-lg backdrop-blur">
+        <header className="fit-header relative z-30 flex w-full max-w-[1500px] flex-col items-center gap-3 rounded-2xl bg-stone-950/85 p-3 text-white shadow-lg backdrop-blur">
           <div className="flex w-full flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-3">
-              <h1 className="text-xl font-black tracking-tight">Hitster</h1>
+              <LogoMark className="size-8 shrink-0" />
+              <h1 className="sr-only">Spot-On</h1>
+              <Wordmark className="h-7 w-auto" />
               {code ? (
                 <span className="rounded-full bg-white/10 px-3 py-0.5 text-sm font-bold tracking-widest ring-1 ring-white/25">
                   <span className="sr-only">Spelcode </span>
@@ -574,57 +577,60 @@ export function Table({ view }: { view: GameView }) {
         ) : null}
 
         {/* De kamer: vloerkleed met daarop de ovale houten eettafel, van bovenaf */}
-        <div className="relative flex w-full max-w-[1500px] flex-1 flex-col">
-          <div className="relative flex flex-1 flex-col px-2 py-6 md:px-6 md:py-[7.5rem]">
+        <div className="relative flex min-h-0 w-full max-w-[1500px] flex-1 flex-col">
+          <div className="relative flex min-h-0 flex-1 flex-col px-2 py-[clamp(0.25rem,1.5dvh,1.5rem)] md:px-6 md:py-(--chair-room)">
             <div
               aria-hidden
               className="rug absolute -inset-x-3 inset-y-0 rounded-[2.5rem] md:rounded-[4.5rem]"
             />
             <Chairs />
 
-            <div className="relative z-10 flex flex-1 flex-col">
+            <div className="relative z-10 flex min-h-0 flex-1 flex-col">
               <div
                 aria-hidden
                 className="wood-edge pointer-events-none absolute inset-x-0 -bottom-[11px] top-[10px] rounded-[2rem] sm:rounded-[50%/20%]"
               />
               <section
                 aria-label="Speeltafel"
-                className="wood-top relative flex flex-1 flex-col justify-between gap-6 rounded-[2rem] p-4 sm:rounded-[50%/20%] sm:px-24 sm:py-12"
+                className="wood-top relative flex min-h-0 flex-1 flex-col justify-between gap-[clamp(0.25rem,1.5dvh,1.5rem)] overflow-hidden rounded-[2rem] p-[clamp(0.5rem,1.5dvh,1rem)] sm:rounded-[50%/20%] sm:px-24 sm:py-(--table-pad)"
               >
                 <OtherTimelines view={view} />
 
-                <div className="flex flex-col items-center gap-4">
-                  <Deck remaining={g.deckCount} shuffling={shuffling}>
-                    {!shuffling &&
-                    !pickedCard &&
-                    (placing || g.phase === "steal") &&
-                    g.currentId ? (
-                      <motion.div
-                        key={g.currentId}
-                        initial={{ y: -50, x: -60, rotate: -8, opacity: 0 }}
-                        animate={{ y: 0, x: 0, rotate: 0, opacity: 1 }}
-                        transition={{
-                          type: "spring",
-                          stiffness: 180,
-                          damping: 18,
-                        }}
-                      >
-                        <MysteryCard disabled={mysteryDisabled} />
-                      </motion.div>
+                <div className="flex flex-col items-center gap-[clamp(0.25rem,1.2dvh,1rem)]">
+                  <div className="relative">
+                    <Deck remaining={g.deckCount} shuffling={shuffling}>
+                      {!shuffling &&
+                      !pickedCard &&
+                      (placing || g.phase === "steal") &&
+                      g.currentId ? (
+                        <motion.div
+                          key={g.currentId}
+                          initial={{ y: -50, x: -60, rotate: -8, opacity: 0 }}
+                          animate={{ y: 0, x: 0, rotate: 0, opacity: 1 }}
+                          transition={{
+                            type: "spring",
+                            stiffness: 180,
+                            damping: 18,
+                          }}
+                        >
+                          <MysteryCard disabled={mysteryDisabled} />
+                        </motion.div>
+                      ) : null}
+                      {g.phase === "reveal" && g.result ? (
+                        <FlipCard key={g.result.song.id} result={g.result} />
+                      ) : null}
+                    </Deck>
+                    {placing ? (
+                      <div className="absolute left-full top-1/2 ml-3 -translate-y-1/2 sm:ml-5">
+                        <TurnTimer
+                          timer={g.timer}
+                          runKey={g.currentId}
+                          withSound={me === null}
+                          onTimeUp={stopMusicAtTimeUp}
+                        />
+                      </div>
                     ) : null}
-                    {g.phase === "reveal" && g.result ? (
-                      <FlipCard key={g.result.song.id} result={g.result} />
-                    ) : null}
-                  </Deck>
-
-                  {placing ? (
-                    <TurnTimer
-                      timer={g.timer}
-                      runKey={g.currentId}
-                      withSound={me === null}
-                      onTimeUp={stopMusicAtTimeUp}
-                    />
-                  ) : null}
+                  </div>
 
                   {musicActive ? <MusicControls /> : null}
 
@@ -645,7 +651,7 @@ export function Table({ view }: { view: GameView }) {
                               ? pickedCard
                                 ? "Twijfel je? Tik op een andere plus-knop om het kaartje te verschuiven. "
                                 : "Sleep het kaartje naar de tijdlijn of tik op een plus-knop. "
-                              : "Luister goed. Misschien wil je straks HITSTER! roepen. "}
+                              : "Luister goed. Misschien wil je straks SPOT-ON! roepen. "}
                             ({g.deckCount + 1} kaartjes in de stapel)
                           </span>
                         </p>
@@ -724,7 +730,7 @@ export function Table({ view }: { view: GameView }) {
                             <p className={`${PLATE} font-semibold`}>
                               Wil iemand stelen?
                               <span className="block text-sm font-normal text-white/80">
-                                Tik op je eigen naam om HITSTER! te roepen (1
+                                Tik op je eigen naam om SPOT-ON! te roepen (1
                                 token). Stelen alle anderen niet, tik dan op
                                 "Niemand steelt".
                               </span>
@@ -748,7 +754,7 @@ export function Table({ view }: { view: GameView }) {
                                       className="size-3 rounded-full ring-1 ring-black/40"
                                       style={{ background: playerColor(id) }}
                                     />
-                                    {p.name}: HITSTER!
+                                    {p.name}: SPOT-ON!
                                   </button>
                                 );
                               })}

@@ -31,7 +31,7 @@ function Hourglass({
   const mound = Math.min(1, bottom / 8);
   return (
     // biome-ignore lint/a11y/noSvgWithoutTitle: decoratief, de tijd staat ook als tekst naast de zandloper
-    <svg viewBox="0 0 60 96" aria-hidden className="h-[72px] w-[45px]">
+    <svg viewBox="0 0 60 96" aria-hidden className="h-14 w-[2.2rem]">
       <defs>
         <clipPath id={`${id}-glass`}>
           <path d={GLASS} />

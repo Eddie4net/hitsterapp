@@ -1,5 +1,5 @@
-import { Disc3 } from "lucide-react";
 import type { ReactNode } from "react";
+import { LogoMark, Wordmark } from "./Logo";
 import { RulesButton } from "./RulesDialog";
 import { SoundToggle } from "./SoundToggle";
 
@@ -18,8 +18,9 @@ export function Screen({
       >
         <div className="mb-6 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <Disc3 className="size-10 text-gold" aria-hidden />
-            <h1 className="text-3xl font-black tracking-tight">Hitster</h1>
+            <LogoMark className="size-10 shrink-0" />
+            <h1 className="sr-only">Spot-On</h1>
+            <Wordmark className="h-8 w-auto" />
           </div>
           <div className="flex items-center gap-1">
             <RulesButton />

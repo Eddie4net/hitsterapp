@@ -105,7 +105,7 @@ export async function connectPlayer(): Promise<boolean> {
 
   return new Promise<boolean>((resolve) => {
     const sdk = new Spotify.Player({
-      name: "Hitster",
+      name: "Spot-On",
       getOAuthToken: (cb) => {
         void getAccessToken().then((t) => cb(t ?? ""));
       },

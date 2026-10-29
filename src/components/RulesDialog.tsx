@@ -97,7 +97,7 @@ export function RulesButton({
                 en krijg een nieuw nummer.
               </li>
               <li>
-                <strong>HITSTER! (stelen):</strong> denk je dat de speler aan de
+                <strong>SPOT-ON! (stelen):</strong> denk je dat de speler aan de
                 beurt het fout heeft? Geef 1 token uit en kies een andere plek
                 in die tijdlijn. Heb jij het goed en de ander fout, dan krijg
                 jij het kaartje in je eigen tijdlijn. Heb jij het fout, dan ben

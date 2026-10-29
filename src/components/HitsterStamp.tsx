@@ -24,7 +24,7 @@ export function HitsterStamp({ name }: { name: string | null }) {
                 WebkitTextStroke: "2px rgba(0,0,0,0.5)",
               }}
             >
-              HITSTER!
+              SPOT-ON!
             </p>
             <p className="mt-2 inline-block rounded-full bg-black/70 px-5 py-1 text-lg font-bold text-white">
               {name}

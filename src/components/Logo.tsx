@@ -8,7 +8,7 @@ function useSvgId(): string {
   return `m${useId().replace(/[^a-zA-Z0-9]/g, "")}`;
 }
 
-/** Het merkteken: vinylplaat met regenboogrand en een H met geluidsgolf, of de munt-variant. */
+/** Het merkteken: neonkompas met afspeelknop en geluidsgolf, of de munt-variant. */
 export function LogoMark({
   kind = "disc",
   className,
@@ -28,12 +28,12 @@ export function LogoMark({
   );
 }
 
-/** Het woord HITSTER in dikke letters met een kleurverloop. */
+/** Het woord Spot-On in dikke oranje letters. */
 export function Wordmark({ className }: { className?: string }) {
   const id = useSvgId();
   return (
     <svg
-      viewBox="0 0 240 44"
+      viewBox="28 0 184 52"
       aria-hidden
       className={className}
       // biome-ignore lint/security/noDangerouslySetInnerHtml: vaste, eigen tekening zonder invoer van gebruikers

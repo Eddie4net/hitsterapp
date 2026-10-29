@@ -2,7 +2,7 @@ import type { Song } from "@/game/types";
 import { LogoMark, Wordmark } from "./Logo";
 
 /** Vierkante kaartjes met een zacht kleurverloop, zoals bij het bordspel. */
-const SIZE = "size-32 sm:size-40";
+const SIZE = "size-(--card)";
 
 /**
  * Verloop per decennium (boven naar onder). Alle kleuren zijn licht genoeg
@@ -53,7 +53,7 @@ export function SongCard({
   );
 }
 
-/** Achterkant: het Hitster-merkteken op diep paars, met een gouden lijst en het woord erboven. */
+/** Achterkant: het Spot-On-merkteken op diep paars, met een gouden lijst en het woord erboven. */
 export function CardBack({ label }: { label?: string }) {
   return (
     <div
@@ -75,7 +75,7 @@ export function CardBack({ label }: { label?: string }) {
         aria-hidden
         className="absolute inset-[4px] rounded-[5px] border border-amber-200/35"
       />
-      <Wordmark className="absolute left-1/2 top-[6%] w-[56%] -translate-x-1/2" />
+      <Wordmark className="absolute left-1/2 top-[6%] w-[58%] -translate-x-1/2" />
       <LogoMark className="absolute inset-x-[12%] top-[16%] w-[76%] drop-shadow-[0_4px_8px_rgba(0,0,0,0.5)]" />
       {label ? (
         <p className="absolute inset-x-0 bottom-1 text-center text-xs font-bold text-white">
@@ -100,7 +100,7 @@ export function TokenCoin({ className = "size-5" }: { className?: string }) {
 export function CompactCard({ song }: { song: Song }) {
   return (
     <div
-      className="flex size-20 shrink-0 flex-col items-center justify-between rounded px-1 py-1.5 text-center text-[#14141f] shadow-[0_5px_10px_rgba(0,0,0,0.4)] ring-1 ring-black/20 sm:size-24"
+      className="flex size-[calc(var(--card)*0.6)] shrink-0 flex-col items-center justify-between rounded px-1 py-1.5 text-center text-[#14141f] shadow-[0_5px_10px_rgba(0,0,0,0.4)] ring-1 ring-black/20"
       style={{ background: gradientFor(song.year) }}
     >
       <p className="line-clamp-1 w-full text-[9px] font-semibold leading-tight">

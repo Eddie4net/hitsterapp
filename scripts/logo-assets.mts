@@ -10,7 +10,7 @@ const html = `<!doctype html><meta charset="utf-8"><body style="margin:0;backgro
  <svg viewBox="0 0 200 200" width="40" height="40">${markSvg("d", "coin")}</svg>
  <svg viewBox="0 0 200 200" width="20" height="20">${markSvg("e", "coin")}</svg>
 </div>
-<svg viewBox="0 0 240 44" width="480" height="88" style="background:#140a2c;border-radius:12px">${wordmarkSvg("w")}</svg>
+<svg viewBox="0 0 240 52" width="480" height="104" style="background:#140a2c;border-radius:12px">${wordmarkSvg("w")}</svg>
 </body>`;
 writeFileSync("public/dev-logo-preview.html", html);
 console.log("klaar");

@@ -2,8 +2,8 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Hitster",
-    short_name: "Hitster",
+    name: "Spot-On",
+    short_name: "Spot-On",
     description: "Leg de muziekkaartjes in de juiste volgorde op de tafel.",
     lang: "nl",
     start_url: "/",

@@ -61,9 +61,10 @@ type GameState = {
   confirmPlace: () => void;
   stealPick: (index: number) => void;
   confirmSteal: () => void;
-  beginSteal: () => void;
+  beginSteal: (playerId?: number) => void;
   stealAt: (index: number) => void;
-  pass: () => void;
+  pass: (playerId?: number) => void;
+  passAll: () => void;
   skip: () => void;
   buy: (playerId: number) => void;
   claimBonus: () => void;
@@ -215,8 +216,17 @@ export const useGameStore = create<GameState>((set, get) => {
       get().stealAt(stealPending);
     },
 
-    beginSteal: () => {
-      if (get().phase === "steal") set({ stealing: true });
+    // Wie wil stelen tikt zelf op de eigen naam: die speler komt vooraan in de rij.
+    beginSteal: (playerId) => {
+      const { phase, stealing, stealQueue } = get();
+      if (phase !== "steal" || stealing) return;
+      const id = playerId ?? stealQueue[0];
+      if (!stealQueue.includes(id)) return;
+      set({
+        stealQueue: [id, ...stealQueue.filter((q) => q !== id)],
+        stealing: true,
+        stealPending: null,
+      });
     },
 
     stealAt: (index) => {
@@ -236,12 +246,23 @@ export const useGameStore = create<GameState>((set, get) => {
       if (rest.length === 0) resolve();
     },
 
-    pass: () => {
-      const { phase, stealQueue } = get();
+    pass: (playerId) => {
+      const { phase, stealQueue, stealing } = get();
       if (phase !== "steal") return;
-      const rest = stealQueue.slice(1);
+      // Tijdens het stelen is het de steler zelf die afhaakt.
+      const id = stealing ? stealQueue[0] : (playerId ?? stealQueue[0]);
+      if (!stealQueue.includes(id)) return;
+      const rest = stealQueue.filter((q) => q !== id);
       set({ stealQueue: rest, stealing: false, stealPending: null });
       if (rest.length === 0) resolve();
+    },
+
+    // "Niemand steelt": de beurt gaat meteen verder.
+    passAll: () => {
+      const { phase, stealing } = get();
+      if (phase !== "steal" || stealing) return;
+      set({ stealQueue: [], stealPending: null });
+      resolve();
     },
 
     skip: () => {

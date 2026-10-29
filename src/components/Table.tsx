@@ -492,7 +492,8 @@ export function Table({ view }: { view: GameView }) {
       ? g.players.find((p) => p.id === g.stealQueue[0])
       : undefined;
   const myTurnToPlace = placing && isMine(player.id);
-  const myTurnToSteal = Boolean(stealer) && isMine(stealer?.id ?? -1);
+  const myTurnToSteal =
+    g.stealing && Boolean(stealer) && isMine(stealer?.id ?? -1);
   const showSlots =
     myTurnToPlace || (g.phase === "steal" && g.stealing && myTurnToSteal);
   // Eerst een plek kiezen (en nog verschuiven mogen), daarna pas bevestigen.
@@ -672,65 +673,99 @@ export function Table({ view }: { view: GameView }) {
                       </>
                     ) : null}
 
-                    {stealer ? (
+                    {g.phase === "steal" ? (
                       <div className="flex flex-col items-center gap-3">
-                        <p className={`${PLATE} font-semibold`}>
-                          {myTurnToSteal
-                            ? me === null
-                              ? `${stealer.name}, wil je stelen?`
-                              : "Wil jij stelen?"
-                            : `${stealer.name} bedenkt of er gestolen wordt…`}
-                          <span className="block text-sm font-normal text-white/80">
-                            Kost 1 token. Je kiest een andere plek. Heeft{" "}
-                            {player.name} het fout, dan krijg jij het kaartje
-                            als jouw plek klopt.
-                          </span>
-                        </p>
-                        {myTurnToSteal ? (
-                          g.stealing ? (
-                            <div className="flex flex-col items-center gap-2">
-                              <p className={`${PLATE} text-sm text-gold`}>
-                                {pickedCoin
-                                  ? "Tik op een andere plus-knop om je token te verschuiven, of tik op het token om het terug te nemen."
-                                  : `Kies nu een plek in de tijdlijn van ${player.name}.`}
-                              </p>
-                              {pickedCoin ? (
+                        {g.stealing && stealer ? (
+                          <>
+                            <p className={`${PLATE} font-semibold`}>
+                              {myTurnToSteal
+                                ? me === null
+                                  ? `${stealer.name}, kies een plek voor je token.`
+                                  : "Kies een plek voor je token."
+                                : `${stealer.name} legt een token neer…`}
+                              <span className="block text-sm font-normal text-white/80">
+                                Kost 1 token. Heeft {player.name} het fout, dan
+                                krijg jij het kaartje als jouw plek klopt.
+                              </span>
+                            </p>
+                            {myTurnToSteal ? (
+                              <div className="flex flex-col items-center gap-2">
+                                <p className={`${PLATE} text-sm text-gold`}>
+                                  {pickedCoin
+                                    ? "Tik op een andere plus-knop om je token te verschuiven, of tik op het token om het terug te nemen."
+                                    : `Kies nu een plek in de tijdlijn van ${player.name}.`}
+                                </p>
+                                {pickedCoin ? (
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      act({ type: "stealConfirm" })
+                                    }
+                                    className="inline-flex min-h-12 items-center gap-2 rounded-xl bg-gold px-6 py-2 font-black text-black hover:brightness-110"
+                                  >
+                                    <Check className="size-5" aria-hidden />
+                                    Token definitief neerleggen
+                                  </button>
+                                ) : null}
                                 <button
                                   type="button"
-                                  onClick={() => act({ type: "stealConfirm" })}
-                                  className="inline-flex min-h-12 items-center gap-2 rounded-xl bg-gold px-6 py-2 font-black text-black hover:brightness-110"
+                                  onClick={() =>
+                                    act({ type: "pass", playerId: stealer.id })
+                                  }
+                                  className="min-h-11 rounded-xl bg-stone-950/80 px-4 text-sm font-semibold text-white hover:bg-stone-950"
                                 >
-                                  <Check className="size-5" aria-hidden />
-                                  Token definitief neerleggen
+                                  Toch niet stelen
+                                </button>
+                              </div>
+                            ) : null}
+                          </>
+                        ) : (
+                          <>
+                            <p className={`${PLATE} font-semibold`}>
+                              Wil iemand stelen?
+                              <span className="block text-sm font-normal text-white/80">
+                                Tik op je eigen naam om HITSTER! te roepen (1
+                                token). Stelen alle anderen niet, tik dan op
+                                "Niemand steelt".
+                              </span>
+                            </p>
+                            <div className="flex flex-wrap items-center justify-center gap-2">
+                              {g.stealQueue.map((id) => {
+                                const p = g.players.find((q) => q.id === id);
+                                if (!p) return null;
+                                return (
+                                  <button
+                                    key={id}
+                                    type="button"
+                                    disabled={!isMine(id)}
+                                    onClick={() =>
+                                      act({ type: "beginSteal", playerId: id })
+                                    }
+                                    className="inline-flex min-h-12 items-center gap-2 rounded-xl bg-gold px-5 font-black text-black hover:brightness-110 disabled:cursor-default disabled:opacity-60 disabled:hover:brightness-100"
+                                  >
+                                    <span
+                                      aria-hidden
+                                      className="size-3 rounded-full ring-1 ring-black/40"
+                                      style={{ background: playerColor(id) }}
+                                    />
+                                    {p.name}: HITSTER!
+                                  </button>
+                                );
+                              })}
+                              {me === null ||
+                              me === player.id ||
+                              g.stealQueue.includes(me) ? (
+                                <button
+                                  type="button"
+                                  onClick={() => act({ type: "passAll" })}
+                                  className="min-h-12 rounded-xl bg-stone-950/80 px-5 font-semibold text-white hover:bg-stone-950"
+                                >
+                                  Niemand steelt
                                 </button>
                               ) : null}
-                              <button
-                                type="button"
-                                onClick={() => act({ type: "pass" })}
-                                className="min-h-11 rounded-xl bg-stone-950/80 px-4 text-sm font-semibold text-white hover:bg-stone-950"
-                              >
-                                Toch niet stelen
-                              </button>
                             </div>
-                          ) : (
-                            <div className="flex gap-2">
-                              <button
-                                type="button"
-                                onClick={() => act({ type: "beginSteal" })}
-                                className="min-h-12 rounded-xl bg-gold px-6 text-lg font-black text-black hover:brightness-110"
-                              >
-                                HITSTER! (1 token)
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => act({ type: "pass" })}
-                                className="min-h-12 rounded-xl bg-stone-950/80 px-5 font-semibold text-white hover:bg-stone-950"
-                              >
-                                Pas
-                              </button>
-                            </div>
-                          )
-                        ) : null}
+                          </>
+                        )}
                       </div>
                     ) : null}
 

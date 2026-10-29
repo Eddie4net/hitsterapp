@@ -43,9 +43,10 @@ export type Intent =
   | { type: "confirm" }
   | { type: "stealPick"; index: number }
   | { type: "stealConfirm" }
-  | { type: "beginSteal" }
+  | { type: "beginSteal"; playerId?: number }
   | { type: "stealAt"; index: number }
-  | { type: "pass" }
+  | { type: "pass"; playerId?: number }
+  | { type: "passAll" }
   | { type: "skip" }
   | { type: "buy"; playerId?: number }
   | { type: "claimBonus" }

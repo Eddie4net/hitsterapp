@@ -10,6 +10,7 @@ export function applyPlayerIntent(playerId: number, intent: Intent): boolean {
   const activeId = s.players[s.active]?.id;
   const isActive = activeId === playerId;
   const isStealer = s.stealQueue[0] === playerId;
+  const inQueue = s.stealQueue.includes(playerId);
   const slotCount = (s.players[s.active]?.timeline.length ?? 0) + 1;
   const validSlot = (index: number) =>
     Number.isInteger(index) && index >= 0 && index < slotCount;
@@ -68,8 +69,9 @@ export function applyPlayerIntent(playerId: number, intent: Intent): boolean {
       s.next();
       return true;
     case "beginSteal":
-      if (s.phase !== "steal" || !isStealer) return false;
-      s.beginSteal();
+      // Iedereen met een token mag zelf aangeven dat hij wil stelen, zolang niemand anders bezig is.
+      if (s.phase !== "steal" || s.stealing || !inQueue) return false;
+      s.beginSteal(playerId);
       return true;
     case "stealAt":
       if (
@@ -83,8 +85,15 @@ export function applyPlayerIntent(playerId: number, intent: Intent): boolean {
       s.stealAt(intent.index);
       return true;
     case "pass":
-      if (s.phase !== "steal" || !isStealer) return false;
-      s.pass();
+      if (s.phase !== "steal" || !inQueue) return false;
+      if (s.stealing && !isStealer) return false;
+      s.pass(playerId);
+      return true;
+    case "passAll":
+      if (s.phase !== "steal" || s.stealing || !(isActive || inQueue)) {
+        return false;
+      }
+      s.passAll();
       return true;
     case "buy":
       // Een telefoon kan alleen voor zichzelf kopen.
@@ -122,13 +131,16 @@ export function applyHostIntent(intent: Intent): void {
       s.next();
       break;
     case "beginSteal":
-      s.beginSteal();
+      s.beginSteal(intent.playerId);
       break;
     case "stealAt":
       s.stealAt(intent.index);
       break;
     case "pass":
-      s.pass();
+      s.pass(intent.playerId);
+      break;
+    case "passAll":
+      s.passAll();
       break;
     case "buy":
       if (intent.playerId !== undefined) s.buy(intent.playerId);

@@ -83,13 +83,29 @@ describe("rechten van een telefoon", () => {
     expect(applyPlayerIntent(0, { type: "place", index: 1.5 })).toBe(false);
   });
 
-  it("laat alleen de volgende steler stelen", () => {
+  it("laat wie wil stelen zelf beginnen, maar één tegelijk", () => {
     applyPlayerIntent(0, { type: "place", index: 0 });
-    expect(applyPlayerIntent(2, { type: "beginSteal" })).toBe(false);
-    expect(applyPlayerIntent(1, { type: "beginSteal" })).toBe(true);
-    expect(applyPlayerIntent(2, { type: "stealAt", index: 1 })).toBe(false);
-    expect(applyPlayerIntent(1, { type: "stealAt", index: 1 })).toBe(true);
-    expect(s().players[1].tokens).toBe(START_TOKENS - 1);
+    expect(applyPlayerIntent(0, { type: "beginSteal" })).toBe(false); // de speler aan de beurt steelt niet
+    expect(applyPlayerIntent(2, { type: "beginSteal" })).toBe(true); // speler 2 hoeft niet te wachten
+    expect(s().stealQueue[0]).toBe(2);
+    expect(applyPlayerIntent(1, { type: "beginSteal" })).toBe(false); // er is er al een bezig
+    expect(applyPlayerIntent(1, { type: "stealAt", index: 1 })).toBe(false);
+    expect(applyPlayerIntent(2, { type: "stealAt", index: 1 })).toBe(true);
+    expect(s().players[2].tokens).toBe(START_TOKENS - 1);
+    expect(s().stealQueue).toEqual([1]); // speler 1 kan daarna nog steeds
+  });
+
+  it("zet 'niemand steelt' de beurt meteen verder", () => {
+    applyPlayerIntent(0, { type: "place", index: 0 });
+    expect(applyPlayerIntent(0, { type: "passAll" })).toBe(true);
+    expect(s().phase).toBe("reveal");
+  });
+
+  it("laat een speler zichzelf afmelden zonder de rest te raken", () => {
+    applyPlayerIntent(0, { type: "place", index: 0 });
+    applyPlayerIntent(2, { type: "pass" });
+    expect(s().stealQueue).toEqual([1]);
+    expect(applyPlayerIntent(2, { type: "passAll" })).toBe(false); // niet meer in de rij
   });
 
   it("laat niemand anders dan de speler aan de beurt doorgaan", () => {

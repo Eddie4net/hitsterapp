@@ -163,3 +163,18 @@ body {
     opacity: 0;
   }
 }
+
+/* Het zand valt als een dun straaltje door de hals van de zandloper. */
+@keyframes hourglass-flow {
+  to {
+    stroke-dashoffset: -9.6;
+  }
+}
+.hourglass-stream {
+  animation: hourglass-flow 0.45s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .hourglass-stream {
+    animation: none;
+  }
+}

@@ -21,6 +21,40 @@ export function applyPlayerIntent(playerId: number, intent: Intent): boolean {
       }
       s.place(intent.index);
       return true;
+    case "pick":
+      if (s.phase !== "placing" || !isActive || !validSlot(intent.index)) {
+        return false;
+      }
+      s.pick(intent.index);
+      return true;
+    case "confirm":
+      if (s.phase !== "placing" || !isActive || s.pending === null) {
+        return false;
+      }
+      s.confirmPlace();
+      return true;
+    case "stealPick":
+      if (
+        s.phase !== "steal" ||
+        !s.stealing ||
+        !isStealer ||
+        !validSlot(intent.index)
+      ) {
+        return false;
+      }
+      s.stealPick(intent.index);
+      return true;
+    case "stealConfirm":
+      if (
+        s.phase !== "steal" ||
+        !s.stealing ||
+        !isStealer ||
+        s.stealPending === null
+      ) {
+        return false;
+      }
+      s.confirmSteal();
+      return true;
     case "skip":
       if (s.phase !== "placing" || !isActive) return false;
       s.skip();
@@ -65,6 +99,18 @@ export function applyHostIntent(intent: Intent): void {
   switch (intent.type) {
     case "place":
       s.place(intent.index);
+      break;
+    case "pick":
+      s.pick(intent.index);
+      break;
+    case "confirm":
+      s.confirmPlace();
+      break;
+    case "stealPick":
+      s.stealPick(intent.index);
+      break;
+    case "stealConfirm":
+      s.confirmSteal();
       break;
     case "skip":
       s.skip();

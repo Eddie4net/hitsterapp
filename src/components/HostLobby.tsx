@@ -23,7 +23,7 @@ import {
   Screen,
   SECONDARY_BUTTON,
 } from "./Screen";
-import { TARGET_OPTIONS } from "./Setup";
+import { TARGET_OPTIONS, TIMER_OPTIONS } from "./Setup";
 
 function useJoinUrl(code: string) {
   const [url, setUrl] = useState("");
@@ -72,6 +72,7 @@ export function HostLobby() {
     seats,
     target,
     tokensEnabled,
+    timerSeconds,
     setSettings,
     addLocalPlayer,
     removeSeat,
@@ -227,7 +228,9 @@ export function HostLobby() {
                   <Choice
                     key={o.value}
                     selected={target === o.value}
-                    onClick={() => setSettings(o.value, tokensEnabled)}
+                    onClick={() =>
+                      setSettings(o.value, tokensEnabled, timerSeconds)
+                    }
                   >
                     {o.label}
                     <span className="block text-sm font-normal opacity-80">
@@ -237,7 +240,9 @@ export function HostLobby() {
                 ))}
                 <Choice
                   selected={tokensEnabled}
-                  onClick={() => setSettings(target, !tokensEnabled)}
+                  onClick={() =>
+                    setSettings(target, !tokensEnabled, timerSeconds)
+                  }
                 >
                   {tokensEnabled ? "Met tokens" : "Zonder tokens"}
                   <span className="block text-sm font-normal opacity-80">
@@ -246,6 +251,26 @@ export function HostLobby() {
                       : "Tik om aan te zetten"}
                   </span>
                 </Choice>
+              </div>
+            </fieldset>
+
+            <fieldset>
+              <legend>
+                <FieldLabel>Bedenktijd per nummer</FieldLabel>
+              </legend>
+              <div className="flex flex-wrap gap-2">
+                {TIMER_OPTIONS.map((o) => (
+                  <Choice
+                    key={o.value}
+                    selected={timerSeconds === o.value}
+                    onClick={() => setSettings(target, tokensEnabled, o.value)}
+                  >
+                    {o.label}
+                    <span className="block text-sm font-normal opacity-80">
+                      {o.hint}
+                    </span>
+                  </Choice>
+                ))}
               </div>
             </fieldset>
 

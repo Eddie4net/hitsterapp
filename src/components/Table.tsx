@@ -14,6 +14,7 @@ import {
 } from "@dnd-kit/core";
 import {
   ArrowRight,
+  Check,
   LogOut,
   Plus,
   SkipForward,
@@ -30,6 +31,7 @@ import { playerColor } from "@/lib/players";
 import { useTableEffects } from "@/lib/useTableEffects";
 import type { GameView } from "@/net/useGameView";
 import { useMusic } from "@/spotify/music";
+import { pausePlayback } from "@/spotify/player";
 import { useHostMusic } from "@/spotify/useHostMusic";
 import { Ambient } from "./Ambient";
 import { FullscreenToggle } from "./FullscreenToggle";
@@ -39,6 +41,7 @@ import { Chair, FabricDefs, Plant } from "./Room";
 import { RulesButton } from "./RulesDialog";
 import { CardBack, CompactCard, SongCard, TokenCoin } from "./SongCard";
 import { SoundToggle } from "./SoundToggle";
+import { TurnTimer } from "./TurnTimer";
 
 const SLOT_HEIGHT = "h-32 sm:h-40";
 
@@ -90,33 +93,66 @@ function Slot({
 }
 
 /** Het kaartje van de speler aan de beurt, nog met de achterkant omhoog, op de gekozen plek. */
-function PlacedCard({ name, color }: { name: string; color: string }) {
+function PlacedCard({
+  name,
+  color,
+  tentative = false,
+}: {
+  name: string;
+  color: string;
+  /** Nog niet bevestigd: het kaartje mag nog naar een andere plek. */
+  tentative?: boolean;
+}) {
   return (
-    <div
+    <motion.div
+      layoutId="active-card"
+      transition={{ type: "spring", stiffness: 260, damping: 26 }}
       role="img"
-      aria-label={`${name} legde het kaartje hier, nog niet omgedraaid`}
+      aria-label={`${name} legde het kaartje hier${tentative ? ", nog te verplaatsen" : ", nog niet omgedraaid"}`}
       className="rounded-md ring-2"
-      style={{ ["--tw-ring-color" as string]: color }}
+      style={{
+        ["--tw-ring-color" as string]: color,
+        filter: tentative
+          ? "drop-shadow(0 0 10px rgba(244,194,77,0.75))"
+          : undefined,
+      }}
     >
       <CardBack />
-    </div>
+    </motion.div>
   );
 }
 
-/** Een token dat iemand op een plek heeft gelegd om te stelen (zonder het jaar te verklappen). */
-function StealToken({ name, color }: { name: string; color: string }) {
+/**
+ * Een token dat iemand op een plek heeft gelegd om te stelen (zonder het jaar te verklappen).
+ * Het muntje valt op tafel en schuift naar een andere plek zolang het niet bevestigd is.
+ */
+function StealToken({
+  name,
+  color,
+  playerId,
+  tentative = false,
+}: {
+  name: string;
+  color: string;
+  playerId: number;
+  tentative?: boolean;
+}) {
   return (
     <div
       role="img"
-      aria-label={`${name} legde een token hier`}
+      aria-label={`${name} legde een token hier${tentative ? ", nog te verplaatsen" : ""}`}
       className={`flex ${SLOT_HEIGHT} w-12 shrink-0 items-center justify-center`}
     >
-      <span
-        className="inline-flex rounded-full p-[3px] shadow-[0_6px_10px_rgba(0,0,0,0.45)]"
+      <motion.span
+        layoutId={`coin-${playerId}`}
+        initial={{ y: -70, scale: 1.7, opacity: 0, rotate: -40 }}
+        animate={{ y: 0, scale: 1, opacity: 1, rotate: 0 }}
+        transition={{ type: "spring", stiffness: 300, damping: 20 }}
+        className={`inline-flex rounded-full p-[3px] shadow-[0_6px_10px_rgba(0,0,0,0.45)] ${tentative ? "animate-pulse ring-2 ring-gold" : ""}`}
         style={{ background: color }}
       >
         <TokenCoin className="size-10" />
-      </span>
+      </motion.span>
     </div>
   );
 }
@@ -366,13 +402,13 @@ function chairSpot(p: number) {
   const root = Math.sqrt(1 - u * u);
   return {
     key: p,
-    left: `calc(${p * 100}% - 3.5rem)`,
+    left: `calc(${p * 100}% - 5.5rem)`,
     drop: RY * (1 - root) * 100 * TABLE_SHARE,
     angle: (Math.atan((RY * ASPECT * 2 * u) / root) * 180) / Math.PI,
   };
 }
 
-const CHAIR_SPOTS = [0.2, 0.4, 0.6, 0.8].map(chairSpot);
+const CHAIR_SPOTS = [0.2, 0.5, 0.8].map(chairSpot);
 
 /** Stoelen die half onder de tafel geschoven staan (alleen op grotere schermen). */
 function Chairs() {
@@ -436,8 +472,15 @@ export function Table({ view }: { view: GameView }) {
   const myTurnToSteal = Boolean(stealer) && isMine(stealer?.id ?? -1);
   const showSlots =
     myTurnToPlace || (g.phase === "steal" && g.stealing && myTurnToSteal);
+  // Eerst een plek kiezen (en nog verschuiven mogen), daarna pas bevestigen.
   const onSlot = (index: number) =>
-    act(myTurnToPlace ? { type: "place", index } : { type: "stealAt", index });
+    act(myTurnToPlace ? { type: "pick", index } : { type: "stealPick", index });
+  const pickedCard = placing && g.pending !== null;
+  const pickedCoin =
+    g.phase === "steal" && g.stealing && g.stealPending !== null;
+  const stopMusicAtTimeUp = () => {
+    if (musicActive) void pausePlayback();
+  };
   const taken = new Map(g.placements.map((p) => [p.index, p.playerId]));
   const winner = g.players.find((p) => p.id === g.winnerId);
   const lastCard =
@@ -510,7 +553,7 @@ export function Table({ view }: { view: GameView }) {
 
         {/* De kamer: vloerkleed met daarop de ovale houten eettafel, van bovenaf */}
         <div className="relative flex w-full max-w-[1500px] flex-1 flex-col">
-          <div className="relative flex flex-1 flex-col px-2 py-6 md:px-6 md:py-[4.5rem]">
+          <div className="relative flex flex-1 flex-col px-2 py-6 md:px-6 md:py-[7.5rem]">
             <div
               aria-hidden
               className="rug absolute -inset-x-3 inset-y-0 rounded-[2.5rem] md:rounded-[4.5rem]"
@@ -531,6 +574,7 @@ export function Table({ view }: { view: GameView }) {
                 <div className="flex flex-col items-center gap-4">
                   <Deck remaining={g.deckCount} shuffling={shuffling}>
                     {!shuffling &&
+                    !pickedCard &&
                     (placing || g.phase === "steal") &&
                     g.currentId ? (
                       <motion.div
@@ -551,6 +595,15 @@ export function Table({ view }: { view: GameView }) {
                     ) : null}
                   </Deck>
 
+                  {placing ? (
+                    <TurnTimer
+                      timer={g.timer}
+                      runKey={g.currentId}
+                      withSound={me === null}
+                      onTimeUp={stopMusicAtTimeUp}
+                    />
+                  ) : null}
+
                   {musicActive ? <MusicControls /> : null}
 
                   <div
@@ -567,11 +620,23 @@ export function Table({ view }: { view: GameView }) {
                             : `${player.name} kiest een plek voor dit nummer.`}
                           <span className="block text-sm font-normal text-white/80">
                             {myTurnToPlace
-                              ? "Sleep het kaartje naar de tijdlijn of tik op een plus-knop. "
+                              ? pickedCard
+                                ? "Twijfel je? Tik op een andere plus-knop om het kaartje te verschuiven. "
+                                : "Sleep het kaartje naar de tijdlijn of tik op een plus-knop. "
                               : "Luister goed. Misschien wil je straks HITSTER! roepen. "}
                             ({g.deckCount + 1} kaartjes in de stapel)
                           </span>
                         </p>
+                        {myTurnToPlace && pickedCard ? (
+                          <button
+                            type="button"
+                            onClick={() => act({ type: "confirm" })}
+                            className="inline-flex min-h-12 items-center gap-2 rounded-xl bg-gold px-6 py-2 font-black text-black hover:brightness-110"
+                          >
+                            <Check className="size-5" aria-hidden />
+                            Zeker weten, leg het kaartje neer
+                          </button>
+                        ) : null}
                         {myTurnToPlace && g.tokensEnabled ? (
                           <button
                             type="button"
@@ -602,9 +667,23 @@ export function Table({ view }: { view: GameView }) {
                         </p>
                         {myTurnToSteal ? (
                           g.stealing ? (
-                            <p className={`${PLATE} text-sm text-gold`}>
-                              Kies nu een plek in de tijdlijn van {player.name}.
-                            </p>
+                            <div className="flex flex-col items-center gap-2">
+                              <p className={`${PLATE} text-sm text-gold`}>
+                                {pickedCoin
+                                  ? "Tik op een andere plus-knop om je token te verschuiven."
+                                  : `Kies nu een plek in de tijdlijn van ${player.name}.`}
+                              </p>
+                              {pickedCoin ? (
+                                <button
+                                  type="button"
+                                  onClick={() => act({ type: "stealConfirm" })}
+                                  className="inline-flex min-h-12 items-center gap-2 rounded-xl bg-gold px-6 py-2 font-black text-black hover:brightness-110"
+                                >
+                                  <Check className="size-5" aria-hidden />
+                                  Token definitief neerleggen
+                                </button>
+                              ) : null}
+                            </div>
                           ) : (
                             <div className="flex gap-2">
                               <button
@@ -705,9 +784,30 @@ export function Table({ view }: { view: GameView }) {
                                   ) : (
                                     <StealToken
                                       name={takenPlayer.name}
+                                      playerId={takenPlayer.id}
                                       color={playerColor(takenPlayer.id)}
                                     />
                                   )}
+                                </li>
+                              ) : placing && g.pending === i ? (
+                                <li>
+                                  <PlacedCard
+                                    name={player.name}
+                                    color={playerColor(player.id)}
+                                    tentative
+                                  />
+                                </li>
+                              ) : g.phase === "steal" &&
+                                g.stealing &&
+                                stealer &&
+                                g.stealPending === i ? (
+                                <li>
+                                  <StealToken
+                                    name={stealer.name}
+                                    playerId={stealer.id}
+                                    color={playerColor(stealer.id)}
+                                    tentative
+                                  />
                                 </li>
                               ) : showSlots ? (
                                 <li>

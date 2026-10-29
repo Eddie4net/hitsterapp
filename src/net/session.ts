@@ -35,6 +35,7 @@ type SessionState = {
   seats: Seat[];
   target: number;
   tokensEnabled: boolean;
+  timerSeconds: number;
   started: boolean;
   // Telefoon
   myPlayerId: number | null;
@@ -44,7 +45,11 @@ type SessionState = {
   startHost: () => Promise<void>;
   addLocalPlayer: (name: string) => void;
   removeSeat: (id: number) => void;
-  setSettings: (target: number, tokensEnabled: boolean) => void;
+  setSettings: (
+    target: number,
+    tokensEnabled: boolean,
+    timerSeconds: number,
+  ) => void;
   startHostedGame: (songs?: Song[], preShuffled?: boolean) => void;
   join: (code: string, name: string) => Promise<void>;
   sendIntent: (intent: Intent) => void;
@@ -113,12 +118,13 @@ export const useSession = create<SessionState>((set, get) => {
   }
 
   function lobbyState(): LobbyState {
-    const { code, seats, target, tokensEnabled } = get();
+    const { code, seats, target, tokensEnabled, timerSeconds } = get();
     const info = presence();
     return {
       code,
       target,
       tokensEnabled,
+      timerSeconds,
       players: seats.map((seat, i) => ({
         id: seat.id,
         name: seat.name,
@@ -230,6 +236,7 @@ export const useSession = create<SessionState>((set, get) => {
     seats: [],
     target: 5,
     tokensEnabled: true,
+    timerSeconds: 30,
     started: false,
     myPlayerId: null,
     lobby: null,
@@ -301,13 +308,13 @@ export const useSession = create<SessionState>((set, get) => {
       broadcastLobby();
     },
 
-    setSettings: (target, tokensEnabled) => {
-      set({ target, tokensEnabled });
+    setSettings: (target, tokensEnabled, timerSeconds) => {
+      set({ target, tokensEnabled, timerSeconds });
       broadcastLobby();
     },
 
     startHostedGame: (songs, preShuffled) => {
-      const { seats, target, tokensEnabled, started } = get();
+      const { seats, target, tokensEnabled, timerSeconds, started } = get();
       if (started || seats.length < 2) return;
       useGameStore.getState().start(
         seats.map((s) => s.name),
@@ -315,6 +322,7 @@ export const useSession = create<SessionState>((set, get) => {
         tokensEnabled,
         songs,
         preShuffled,
+        timerSeconds,
       );
       set({ started: true });
       unsubGame?.();

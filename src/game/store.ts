@@ -30,6 +30,14 @@ type GameState = {
   /** True zodra de eerstvolgende steler heeft gekozen om te stelen. */
   stealing: boolean;
   bonusClaimed: boolean;
+  /** Plek die de speler aan de beurt heeft gekozen maar nog niet heeft bevestigd (verplaatsen mag nog). */
+  pending: number | null;
+  /** Plek waar de steler zijn token heeft neergelegd maar nog niet heeft bevestigd. */
+  stealPending: number | null;
+  /** Bedenktijd per nummer in seconden (0 = geen timer). */
+  timerSeconds: number;
+  /** Tijdstip (ms) waarop de bedenktijd afloopt, of null als er geen timer loopt. */
+  deadline: number | null;
   start: (
     names: string[],
     target: number,
@@ -37,6 +45,8 @@ type GameState = {
     songs?: Song[],
     /** True als de lijst al in de gewenste volgorde staat (jaartallen zijn dan vooraf gecontroleerd). */
     preShuffled?: boolean,
+    /** Bedenktijd per nummer in seconden; 0 of weglaten voor geen timer. */
+    timerSeconds?: number,
   ) => void;
   /** Past het jaartal van een nummer aan dat nog in de stapel ligt (of nu geraden wordt). */
   updateSongYear: (
@@ -45,6 +55,12 @@ type GameState = {
     source: Song["yearSource"],
   ) => void;
   place: (index: number) => void;
+  /** Kies (of verplaats) een plek zonder te bevestigen. */
+  pick: (index: number) => void;
+  /** Bevestig de gekozen plek: daarna kunnen anderen stelen. */
+  confirmPlace: () => void;
+  stealPick: (index: number) => void;
+  confirmSteal: () => void;
   beginSteal: () => void;
   stealAt: (index: number) => void;
   pass: () => void;
@@ -67,7 +83,14 @@ const initial = {
   stealQueue: [] as number[],
   stealing: false,
   bonusClaimed: false,
+  pending: null as number | null,
+  stealPending: null as number | null,
+  deadline: null as number | null,
 };
+
+/** Nieuwe bedenktijd: eindtijdstip, of null zonder timer. */
+const deadlineFor = (seconds: number) =>
+  seconds > 0 ? Date.now() + seconds * 1000 : null;
 
 export const useGameStore = create<GameState>((set, get) => {
   /** Verdeel het kaartje en laat het jaar zien. */
@@ -102,6 +125,7 @@ export const useGameStore = create<GameState>((set, get) => {
     ...initial,
     target: 10,
     tokensEnabled: true,
+    timerSeconds: 0,
 
     start: (
       names,
@@ -109,6 +133,7 @@ export const useGameStore = create<GameState>((set, get) => {
       tokensEnabled = true,
       songs = SAMPLE_SONGS,
       preShuffled = false,
+      timerSeconds = 0,
     ) => {
       const n = names.length;
       const deck = preShuffled ? songs : shuffle(songs);
@@ -133,6 +158,8 @@ export const useGameStore = create<GameState>((set, get) => {
         deck: rest.slice(1),
         target,
         tokensEnabled,
+        timerSeconds,
+        deadline: deadlineFor(timerSeconds),
       });
     },
 
@@ -146,9 +173,45 @@ export const useGameStore = create<GameState>((set, get) => {
             .filter((p) => p.id !== players[active].id && p.tokens >= 1)
             .map((p) => p.id)
         : [];
-      set({ placements, stealQueue, stealing: false });
+      set({
+        placements,
+        stealQueue,
+        stealing: false,
+        pending: null,
+        stealPending: null,
+        deadline: null,
+      });
       if (stealQueue.length === 0) resolve();
       else set({ phase: "steal" });
+    },
+
+    pick: (index) => {
+      const { phase, players, active } = get();
+      if (phase !== "placing") return;
+      const slots = players[active].timeline.length;
+      if (!Number.isInteger(index) || index < 0 || index > slots) return;
+      set({ pending: index });
+    },
+
+    confirmPlace: () => {
+      const { pending } = get();
+      if (pending === null) return;
+      get().place(pending);
+    },
+
+    stealPick: (index) => {
+      const { phase, stealing, placements, players, active } = get();
+      if (phase !== "steal" || !stealing) return;
+      const slots = players[active].timeline.length;
+      if (!Number.isInteger(index) || index < 0 || index > slots) return;
+      if (placements.some((p) => p.index === index)) return;
+      set({ stealPending: index });
+    },
+
+    confirmSteal: () => {
+      const { stealPending } = get();
+      if (stealPending === null) return;
+      get().stealAt(stealPending);
     },
 
     beginSteal: () => {
@@ -167,6 +230,7 @@ export const useGameStore = create<GameState>((set, get) => {
         ),
         stealQueue: rest,
         stealing: false,
+        stealPending: null,
       });
       if (rest.length === 0) resolve();
     },
@@ -175,7 +239,7 @@ export const useGameStore = create<GameState>((set, get) => {
       const { phase, stealQueue } = get();
       if (phase !== "steal") return;
       const rest = stealQueue.slice(1);
-      set({ stealQueue: rest, stealing: false });
+      set({ stealQueue: rest, stealing: false, stealPending: null });
       if (rest.length === 0) resolve();
     },
 
@@ -191,6 +255,8 @@ export const useGameStore = create<GameState>((set, get) => {
         ),
         current: deck[0],
         deck: deck.slice(1),
+        pending: null,
+        deadline: deadlineFor(get().timerSeconds),
       });
     },
 
@@ -255,6 +321,9 @@ export const useGameStore = create<GameState>((set, get) => {
         stealQueue: [],
         stealing: false,
         bonusClaimed: false,
+        pending: null,
+        stealPending: null,
+        deadline: deadlineFor(get().timerSeconds),
       });
     },
 

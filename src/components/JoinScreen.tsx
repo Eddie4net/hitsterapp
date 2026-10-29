@@ -163,7 +163,10 @@ export function ControllerLobby() {
           {lobby ? (
             <p className="mt-4 text-sm text-white/70">
               {lobby.target} kaartjes om te winnen,{" "}
-              {lobby.tokensEnabled ? "met" : "zonder"} tokens.
+              {lobby.tokensEnabled ? "met" : "zonder"} tokens,{" "}
+              {lobby.timerSeconds > 0
+                ? `${lobby.timerSeconds} seconden bedenktijd.`
+                : "zonder tijdslimiet."}
             </p>
           ) : null}
         </>

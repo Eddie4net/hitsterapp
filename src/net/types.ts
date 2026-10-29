@@ -28,11 +28,21 @@ export type PublicState = {
   stealQueue: number[];
   stealing: boolean;
   bonusClaimed: boolean;
+  /** Gekozen maar nog niet bevestigde plek van de speler aan de beurt. */
+  pending: number | null;
+  /** Gekozen maar nog niet bevestigde plek van de steler. */
+  stealPending: number | null;
+  /** Bedenktijd: resterende tijd op het moment van versturen, of null zonder lopende timer. */
+  timer: { seconds: number; remainingMs: number } | null;
 };
 
 /** Alles wat een speler kan doen. De host controleert of het mag. */
 export type Intent =
   | { type: "place"; index: number }
+  | { type: "pick"; index: number }
+  | { type: "confirm" }
+  | { type: "stealPick"; index: number }
+  | { type: "stealConfirm" }
   | { type: "beginSteal" }
   | { type: "stealAt"; index: number }
   | { type: "pass" }
@@ -53,6 +63,7 @@ export type LobbyState = {
   players: LobbyPlayer[];
   target: number;
   tokensEnabled: boolean;
+  timerSeconds: number;
 };
 
 export type RejectReason = "full" | "started" | "name";

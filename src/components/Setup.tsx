@@ -20,6 +20,14 @@ export const TARGET_OPTIONS = [
   { value: 5, label: "Kort spel", hint: "5 kaartjes" },
   { value: OFFICIAL_TARGET, label: "Officieel", hint: "10 kaartjes" },
 ];
+/** Hoe lang een speler over een nummer mag nadenken voordat de muziek stopt. */
+export const TIMER_OPTIONS = [
+  { value: 0, label: "Geen", hint: "geen limiet" },
+  { value: 20, label: "20 s", hint: "snel" },
+  { value: 30, label: "30 s", hint: "aanbevolen" },
+  { value: 45, label: "45 s", hint: "rustig" },
+  { value: 60, label: "60 s", hint: "ruim" },
+];
 const NAMES_KEY = "hitsterapp-names";
 
 export const nameSchema = z
@@ -47,6 +55,7 @@ export function Setup({ onBack }: { onBack: () => void }) {
   const [count, setCount] = useState(2);
   const [target, setTarget] = useState(5);
   const [tokens, setTokens] = useState(true);
+  const [timerSeconds, setTimerSeconds] = useState(30);
   const [names, setNames] = useState([
     "Speler 1",
     "Speler 2",
@@ -93,6 +102,7 @@ export function Setup({ onBack }: { onBack: () => void }) {
       tokens,
       prepared.songs,
       prepared.preShuffled,
+      timerSeconds,
     );
     afterStart();
   }
@@ -175,6 +185,26 @@ export function Setup({ onBack }: { onBack: () => void }) {
                 key={o.value}
                 selected={target === o.value}
                 onClick={() => setTarget(o.value)}
+              >
+                {o.label}
+                <span className="block text-sm font-normal opacity-80">
+                  {o.hint}
+                </span>
+              </Choice>
+            ))}
+          </div>
+        </fieldset>
+
+        <fieldset className="mb-5">
+          <legend>
+            <FieldLabel>Bedenktijd per nummer</FieldLabel>
+          </legend>
+          <div className="flex flex-wrap gap-2">
+            {TIMER_OPTIONS.map((o) => (
+              <Choice
+                key={o.value}
+                selected={timerSeconds === o.value}
+                onClick={() => setTimerSeconds(o.value)}
               >
                 {o.label}
                 <span className="block text-sm font-normal opacity-80">

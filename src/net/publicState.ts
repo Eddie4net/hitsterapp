@@ -16,6 +16,10 @@ export type GameSnapshot = {
   stealQueue: number[];
   stealing: boolean;
   bonusClaimed: boolean;
+  pending: number | null;
+  stealPending: number | null;
+  timerSeconds: number;
+  deadline: number | null;
 };
 
 export type Presence = { remote: boolean; connected: boolean };
@@ -24,6 +28,7 @@ export type Presence = { remote: boolean; connected: boolean };
 export function toPublicState(
   game: GameSnapshot,
   presence: Presence[],
+  now: number = Date.now(),
 ): PublicState {
   return {
     phase: game.phase === "setup" ? "placing" : game.phase,
@@ -46,5 +51,15 @@ export function toPublicState(
     stealQueue: game.stealQueue,
     stealing: game.stealing,
     bonusClaimed: game.bonusClaimed,
+    pending: game.pending,
+    stealPending: game.stealPending,
+    // Klokken van apparaten lopen niet gelijk: we sturen de resterende tijd, geen tijdstip.
+    timer:
+      game.deadline === null
+        ? null
+        : {
+            seconds: game.timerSeconds,
+            remainingMs: Math.max(0, game.deadline - now),
+          },
   };
 }

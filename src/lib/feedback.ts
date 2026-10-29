@@ -102,7 +102,9 @@ export type Cue =
   | "place"
   | "shuffle"
   | "coin"
-  | "hitster";
+  | "hitster"
+  | "tick"
+  | "timeup";
 
 export function playCue(cue: Cue) {
   if (!useSound.getState().on) return;
@@ -129,6 +131,16 @@ export function playCue(cue: Cue) {
     case "coin":
       tone(1318, 0, 0.12, "triangle", 0.12);
       tone(1760, 0.07, 0.35, "triangle", 0.1);
+      break;
+    case "tick":
+      noise(0, 0.05, 1800, 0.2, 2.2);
+      tone(880, 0, 0.05, "sine", 0.06);
+      break;
+    case "timeup":
+      tone(196, 0, 0.9, "sine", 0.2);
+      tone(98, 0, 1.2, "sine", 0.2);
+      noise(0, 0.12, 700, 0.18, 1.2);
+      vibrate([120, 60, 120]);
       break;
     case "hitster":
       tone(220, 0, 0.18, "sawtooth", 0.14);

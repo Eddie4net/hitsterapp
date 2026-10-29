@@ -57,7 +57,7 @@ export function Chair({
       style={style}
       width={480}
       height={400}
-      className={`w-28 select-none drop-shadow-[0_-9px_8px_rgba(40,26,10,0.4)] ${flip ? "rotate-180" : ""} ${className}`}
+      className={`w-44 select-none drop-shadow-[0_-9px_8px_rgba(40,26,10,0.4)] ${flip ? "rotate-180" : ""} ${className}`}
     />
   );
 }

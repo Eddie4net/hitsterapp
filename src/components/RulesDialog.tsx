@@ -35,10 +35,11 @@ export function RulesButton({
       <button
         type="button"
         onClick={() => ref.current?.showModal()}
+        aria-label="Spelregels"
         className="flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm text-white/85 hover:bg-white/10"
       >
         <BookOpen className="size-4" aria-hidden />
-        Spelregels
+        <span className="hidden sm:inline">Spelregels</span>
       </button>
 
       <dialog

@@ -35,18 +35,27 @@ export function SongCard({
 }) {
   return (
     <div
-      className={`${SIZE} flex shrink-0 flex-col items-center justify-between rounded-md px-2 py-3 text-center text-[#14141f] shadow-[0_8px_16px_rgba(0,0,0,0.4)] ${
+      className={`${SIZE} flex shrink-0 flex-col items-center justify-between rounded-md px-[6%] py-[8%] text-center text-[#14141f] shadow-[0_8px_16px_rgba(0,0,0,0.4)] ${
         highlight ? "ring-4 ring-white" : "ring-1 ring-black/20"
       }`}
       style={{ background: gradientFor(song.year) }}
     >
-      <p className="line-clamp-2 text-[11px] font-semibold leading-tight sm:text-xs">
+      <p
+        className="line-clamp-2 font-semibold leading-tight"
+        style={{ fontSize: "max(9px, calc(var(--card) * 0.085))" }}
+      >
         {song.artist}
       </p>
-      <p className="text-4xl font-bold leading-none tracking-tight tabular-nums sm:text-5xl">
+      <p
+        className="font-bold leading-none tracking-tight tabular-nums"
+        style={{ fontSize: "calc(var(--card) * 0.3)" }}
+      >
         {song.year}
       </p>
-      <p className="line-clamp-2 text-xs font-light italic leading-tight sm:text-sm">
+      <p
+        className="line-clamp-2 font-light italic leading-tight"
+        style={{ fontSize: "max(9px, calc(var(--card) * 0.095))" }}
+      >
         {song.title}
       </p>
     </div>
@@ -103,13 +112,22 @@ export function CompactCard({ song }: { song: Song }) {
       className="flex size-[calc(var(--card)*0.6)] shrink-0 flex-col items-center justify-between rounded px-1 py-1.5 text-center text-[#14141f] shadow-[0_5px_10px_rgba(0,0,0,0.4)] ring-1 ring-black/20"
       style={{ background: gradientFor(song.year) }}
     >
-      <p className="line-clamp-1 w-full text-[9px] font-semibold leading-tight">
+      <p
+        className="line-clamp-1 w-full font-semibold leading-tight"
+        style={{ fontSize: "max(8px, calc(var(--card) * 0.052))" }}
+      >
         {song.artist}
       </p>
-      <p className="text-2xl font-bold leading-none tracking-tight tabular-nums sm:text-3xl">
+      <p
+        className="font-bold leading-none tracking-tight tabular-nums"
+        style={{ fontSize: "calc(var(--card) * 0.19)" }}
+      >
         {song.year}
       </p>
-      <p className="line-clamp-1 w-full text-[9px] font-light italic leading-tight">
+      <p
+        className="line-clamp-1 w-full font-light italic leading-tight"
+        style={{ fontSize: "max(8px, calc(var(--card) * 0.055))" }}
+      >
         {song.title}
       </p>
     </div>

@@ -70,7 +70,7 @@ function Slot({
       onClick={() => onPlace(index)}
       aria-label={`Leg het kaartje ${label}`}
       className={`group relative flex ${SLOT_HEIGHT} shrink-0 items-center justify-center rounded-xl transition-all duration-200 ${
-        isOver ? "w-20" : "w-12 hover:w-16"
+        isOver ? "w-14" : "w-9 hover:w-12"
       }`}
       style={{
         background:
@@ -154,7 +154,7 @@ function StealToken({
     <div
       role="img"
       aria-label={`${name} legde een token hier${tentative ? ", nog te verplaatsen" : ""}`}
-      className={`flex ${SLOT_HEIGHT} w-12 shrink-0 items-center justify-center`}
+      className={`flex ${SLOT_HEIGHT} w-10 shrink-0 items-center justify-center`}
     >
       <motion.span
         onClick={onWithdraw}
@@ -175,7 +175,7 @@ function StealToken({
         className={`inline-flex rounded-full p-[3px] shadow-[0_6px_10px_rgba(0,0,0,0.45)] ${tentative ? "animate-pulse ring-2 ring-gold" : ""}`}
         style={{ background: color }}
       >
-        <TokenCoin className="size-10" />
+        <TokenCoin className="size-9" />
       </motion.span>
     </div>
   );
@@ -311,7 +311,7 @@ function Scoreboard({
 }) {
   const { state: g, me } = view;
   return (
-    <ul className="flex flex-wrap items-center justify-center gap-2">
+    <ul className="order-last flex w-full min-w-0 flex-wrap items-center justify-center gap-2 md:order-none md:w-auto md:flex-1">
       {g.players.map((p, i) => {
         const isActive = i === g.active && g.phase !== "finished";
         const canBuy =
@@ -324,7 +324,7 @@ function Scoreboard({
           <li
             key={p.id}
             aria-current={isActive ? "true" : undefined}
-            className={`flex flex-wrap items-center gap-x-1.5 rounded-full px-4 py-1.5 text-sm font-semibold ${
+            className={`flex flex-wrap items-center gap-x-1.5 rounded-full px-2.5 py-1 text-xs font-semibold sm:px-4 sm:py-1.5 sm:text-sm ${
               isActive
                 ? "bg-gold text-black"
                 : "bg-white/10 text-white ring-1 ring-white/25"
@@ -341,7 +341,7 @@ function Scoreboard({
             </span>
             {g.tokensEnabled ? (
               <>
-                <span>· {p.tokens} tokens</span>
+                <span className="sr-only">{p.tokens} tokens</span>
                 <Coins count={p.tokens} />
               </>
             ) : null}
@@ -379,7 +379,7 @@ function OtherTimelines({ view }: { view: GameView }) {
       }}
     >
       {others.map((p) => (
-        <div key={p.id} className="min-w-0">
+        <div key={p.id} className="min-w-0 [container-type:inline-size]">
           <p className="mx-auto mb-1.5 w-fit rounded-full bg-stone-950/75 px-3 py-0.5 text-xs font-semibold text-white">
             <span
               aria-hidden
@@ -392,6 +392,13 @@ function OtherTimelines({ view }: { view: GameView }) {
           <div className="overflow-x-auto pb-2">
             <ul
               className="mx-auto flex w-max items-center gap-1.5 px-1"
+              style={
+                {
+                  "--n": Math.max(p.timeline.length, 1),
+                  "--card":
+                    "max(4.5rem, min(var(--card-base), calc((100cqw - 1rem - var(--n) * 0.4rem) / var(--n) / 0.6)))",
+                } as React.CSSProperties
+              }
               aria-label={`Tijdlijn van ${p.name}`}
             >
               {p.timeline.map((song) => (
@@ -539,34 +546,37 @@ export function Table({ view }: { view: GameView }) {
         <FabricDefs />
         <Ambient pulse={pulse} pulseKey={pulseKey} />
 
-        <header className="fit-header relative z-30 flex w-full max-w-[1500px] flex-col items-center gap-3 rounded-2xl bg-stone-950/85 p-3 text-white shadow-lg backdrop-blur">
-          <div className="flex w-full flex-wrap items-center justify-between gap-2">
-            <div className="flex items-center gap-3">
-              <LogoMark className="size-8 shrink-0" />
-              <h1 className="sr-only">Spot-On</h1>
-              <Wordmark className="h-7 w-auto" />
-              {code ? (
-                <span className="rounded-full bg-white/10 px-3 py-0.5 text-sm font-bold tracking-widest ring-1 ring-white/25">
-                  <span className="sr-only">Spelcode </span>
-                  {code}
-                </span>
-              ) : null}
-            </div>
-            <div className="flex items-center gap-1">
-              <RulesButton autoOpenOnce />
-              <FullscreenToggle />
-              <SoundToggle />
-              <button
-                type="button"
-                onClick={exit}
-                className="flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm text-white/85 hover:bg-white/10"
-              >
-                <LogOut className="size-4" aria-hidden />
-                {me !== null ? "Verlaten" : "Stoppen"}
-              </button>
-            </div>
+        <header className="fit-header relative z-30 flex w-full max-w-[1500px] flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-2xl bg-stone-950/85 px-3 py-2 text-white shadow-lg backdrop-blur">
+          <div className="flex items-center gap-3">
+            <LogoMark className="size-9 shrink-0" />
+            <h1 className="sr-only">Spot-On</h1>
+            <Wordmark className="h-7 w-auto" />
+            {code ? (
+              <span className="rounded-full bg-white/10 px-3 py-0.5 text-sm font-bold tracking-widest ring-1 ring-white/25">
+                <span className="sr-only">Spelcode </span>
+                {code}
+              </span>
+            ) : null}
           </div>
           <Scoreboard view={view} onBuy={handleBuy} />
+          <div className="flex items-center gap-1">
+            <RulesButton autoOpenOnce />
+            <span className="hidden sm:contents">
+              <FullscreenToggle />
+            </span>
+            <SoundToggle />
+            <button
+              type="button"
+              onClick={exit}
+              aria-label={me !== null ? "Verlaten" : "Stoppen"}
+              className="flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm text-white/85 hover:bg-white/10"
+            >
+              <LogOut className="size-4" aria-hidden />
+              <span className="hidden sm:inline">
+                {me !== null ? "Verlaten" : "Stoppen"}
+              </span>
+            </button>
+          </div>
         </header>
 
         {lost ? (
@@ -596,46 +606,49 @@ export function Table({ view }: { view: GameView }) {
               >
                 <OtherTimelines view={view} />
 
-                <div className="flex flex-col items-center gap-[clamp(0.25rem,1.2dvh,1rem)]">
-                  <div className="relative">
-                    <Deck remaining={g.deckCount} shuffling={shuffling}>
-                      {!shuffling &&
-                      !pickedCard &&
-                      (placing || g.phase === "steal") &&
-                      g.currentId ? (
-                        <motion.div
-                          key={g.currentId}
-                          initial={{ y: -50, x: -60, rotate: -8, opacity: 0 }}
-                          animate={{ y: 0, x: 0, rotate: 0, opacity: 1 }}
-                          transition={{
-                            type: "spring",
-                            stiffness: 180,
-                            damping: 18,
-                          }}
-                        >
-                          <MysteryCard disabled={mysteryDisabled} />
-                        </motion.div>
+                <div className="flex flex-col items-center justify-center gap-[clamp(0.5rem,1.5dvh,1rem)] sm:flex-row sm:gap-10">
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="relative sm:mr-[5.25rem]">
+                      <Deck remaining={g.deckCount} shuffling={shuffling}>
+                        {!shuffling &&
+                        !pickedCard &&
+                        (placing || g.phase === "steal") &&
+                        g.currentId ? (
+                          <motion.div
+                            key={g.currentId}
+                            initial={{ y: -50, x: -60, rotate: -8, opacity: 0 }}
+                            animate={{ y: 0, x: 0, rotate: 0, opacity: 1 }}
+                            transition={{
+                              type: "spring",
+                              stiffness: 180,
+                              damping: 18,
+                            }}
+                          >
+                            <MysteryCard disabled={mysteryDisabled} />
+                          </motion.div>
+                        ) : null}
+                        {pickedCard && g.deckCount > 0 ? <CardBack /> : null}
+                        {g.phase === "reveal" && g.result ? (
+                          <FlipCard key={g.result.song.id} result={g.result} />
+                        ) : null}
+                      </Deck>
+                      {placing ? (
+                        <div className="absolute left-full top-1/2 ml-3 -translate-y-1/2 sm:ml-5">
+                          <TurnTimer
+                            timer={g.timer}
+                            runKey={g.currentId}
+                            withSound={me === null}
+                            onTimeUp={stopMusicAtTimeUp}
+                          />
+                        </div>
                       ) : null}
-                      {g.phase === "reveal" && g.result ? (
-                        <FlipCard key={g.result.song.id} result={g.result} />
-                      ) : null}
-                    </Deck>
-                    {placing ? (
-                      <div className="absolute left-full top-1/2 ml-3 -translate-y-1/2 sm:ml-5">
-                        <TurnTimer
-                          timer={g.timer}
-                          runKey={g.currentId}
-                          withSound={me === null}
-                          onTimeUp={stopMusicAtTimeUp}
-                        />
-                      </div>
-                    ) : null}
+                    </div>
+
+                    {musicActive ? <MusicControls /> : null}
                   </div>
 
-                  {musicActive ? <MusicControls /> : null}
-
                   <div
-                    className="flex min-h-12 flex-col items-center gap-3 text-center"
+                    className="flex min-h-12 max-w-[34rem] flex-col items-center gap-2 text-center"
                     aria-live="polite"
                   >
                     {placing ? (
@@ -646,7 +659,7 @@ export function Table({ view }: { view: GameView }) {
                               ? `${player.name}, waar hoort dit nummer?`
                               : "Jij bent aan de beurt: waar hoort dit nummer?"
                             : `${player.name} kiest een plek voor dit nummer.`}
-                          <span className="block text-sm font-normal text-white/80">
+                          <span className="plate-hint block text-sm font-normal text-white/80">
                             {myTurnToPlace
                               ? pickedCard
                                 ? "Twijfel je? Tik op een andere plus-knop om het kaartje te verschuiven. "
@@ -689,7 +702,7 @@ export function Table({ view }: { view: GameView }) {
                                   ? `${stealer.name}, kies een plek voor je token.`
                                   : "Kies een plek voor je token."
                                 : `${stealer.name} legt een token neer…`}
-                              <span className="block text-sm font-normal text-white/80">
+                              <span className="plate-hint block text-sm font-normal text-white/80">
                                 Kost 1 token. Heeft {player.name} het fout, dan
                                 krijg jij het kaartje als jouw plek klopt.
                               </span>
@@ -729,7 +742,7 @@ export function Table({ view }: { view: GameView }) {
                           <>
                             <p className={`${PLATE} font-semibold`}>
                               Wil iemand stelen?
-                              <span className="block text-sm font-normal text-white/80">
+                              <span className="plate-hint block text-sm font-normal text-white/80">
                                 Tik op je eigen naam om SPOT-ON! te roepen (1
                                 token). Stelen alle anderen niet, tik dan op
                                 "Niemand steelt".
@@ -830,8 +843,21 @@ export function Table({ view }: { view: GameView }) {
                     Tijdlijn van {player.name}
                     {me === player.id ? " (jij)" : ""}
                   </p>
-                  <div className="w-full overflow-x-auto pb-3 pt-2">
-                    <ul className="mx-auto flex w-max items-center gap-2 px-2">
+                  <div className="w-full overflow-x-auto pb-3 pt-2 [container-type:inline-size]">
+                    <ul
+                      className="mx-auto flex w-max items-center gap-2 px-2"
+                      style={
+                        {
+                          "--n": Math.max(
+                            player.timeline.length +
+                              (pickedCard || g.phase === "steal" ? 1 : 0),
+                            1,
+                          ),
+                          "--card":
+                            "max(4rem, min(var(--card-base), calc((100cqw - (var(--n) + 1) * 3.4rem - var(--n) * 0.5rem - 1rem) / var(--n))))",
+                        } as React.CSSProperties
+                      }
+                    >
                       {Array.from(
                         { length: player.timeline.length + 1 },
                         (_, i) => {

@@ -133,18 +133,20 @@ function compass(id: string, r: number, glow: boolean): string {
 <path d="${main}" fill="none" stroke="#fff" stroke-opacity=".5" stroke-width="1"/>`;
 }
 
-/** Het merkteken voor kaartjes en icoon: donker medaillon met neonrand. Viewbox 0 0 200 200. */
+/** Het merkteken voor kaartjes en icoon: donker medaillon in een messing rand met een dun neonlijntje. Viewbox 0 0 200 200. */
 function disc(id: string): string {
   return `${sharedDefs(id)}<defs>
 <radialGradient id="${id}-body" cx=".5" cy=".4" r=".75"><stop offset="0" stop-color="#1b2a6b"/><stop offset=".6" stop-color="#0b1236"/><stop offset="1" stop-color="#050818"/></radialGradient>
+<linearGradient id="${id}-metal" x1=".15" y1="0" x2=".85" y2="1"><stop offset="0" stop-color="#fff3c4"/><stop offset=".3" stop-color="#e8b34a"/><stop offset=".55" stop-color="#a8701c"/><stop offset=".8" stop-color="#f2cd6e"/><stop offset="1" stop-color="#8a5a14"/></linearGradient>
 </defs>
-<circle cx="100" cy="100" r="97" fill="url(#${id}-body)"/>
-<circle cx="100" cy="100" r="88" fill="none" stroke="url(#${id}-neon)" stroke-width="9" filter="url(#${id}-blur)" opacity=".8"/>
-<circle cx="100" cy="100" r="88" fill="none" stroke="url(#${id}-neon)" stroke-width="5"/>
-<circle cx="100" cy="100" r="79" fill="none" stroke="#fff" stroke-opacity=".18" stroke-width="1"/>
+<circle cx="100" cy="100" r="97" fill="url(#${id}-metal)"/>
+<circle cx="100" cy="100" r="85" fill="none" stroke="#3b2306" stroke-opacity=".55" stroke-width="1.6"/>
+<circle cx="100" cy="100" r="84" fill="url(#${id}-body)"/>
+<circle cx="100" cy="100" r="80" fill="none" stroke="url(#${id}-neon)" stroke-width="5" filter="url(#${id}-blur)" opacity=".6"/>
+<circle cx="100" cy="100" r="80" fill="none" stroke="url(#${id}-neon)" stroke-width="2.6"/>
 <circle cx="100" cy="100" r="64" fill="none" stroke="#8b5cf6" stroke-opacity=".5" stroke-width="1.4" stroke-dasharray="2 4"/>
-${compass(id, 84, true)}
-${waveBars(id, 100, 100, 34, 62, 52)}
+${compass(id, 76, true)}
+${waveBars(id, 100, 100, 34, 56, 48)}
 ${playButton(id, 1.05, 100, 100)}
 ${sparkle(160, 40, 8, 0.95)}${sparkle(42, 158, 5, 0.7)}`;
 }
@@ -161,7 +163,7 @@ function coin(id: string): string {
 <circle cx="100" cy="100" r="85" fill="none" stroke="#fff" stroke-opacity=".35" stroke-width="1.4"/>
 <circle cx="100" cy="100" r="80" fill="url(#${id}-face)"/>
 <circle cx="100" cy="100" r="80" fill="none" stroke="#3b2306" stroke-opacity=".6" stroke-width="2"/>
-<circle cx="100" cy="100" r="70" fill="none" stroke="url(#${id}-neon)" stroke-width="5"/>
+<circle cx="100" cy="100" r="70" fill="none" stroke="url(#${id}-neon)" stroke-width="3"/>
 ${compass(id, 64, false)}
 ${playButton(id, 0.9, 100, 100)}
 <path d="${arc(100, 100, 92, -62, 12)}" fill="none" stroke="url(#${id}-shine)" stroke-width="5" stroke-linecap="round" opacity=".85"/>
@@ -175,14 +177,14 @@ export function markSvg(id: string, kind: MarkKind = "disc"): string {
   return kind === "coin" ? coin(id) : disc(id);
 }
 
-/** Het woord "Spot-On" in dikke oranje letters met donkere rand en gloed (viewbox 0 0 240 52). */
+/** Het woord "Spot-On" in gouden letters met een donkerbruine rand, passend bij hout en messing (viewbox 0 0 240 52). */
 export function wordmarkSvg(id: string): string {
   return `<defs>
-<linearGradient id="${id}-wm" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffe066"/><stop offset=".5" stop-color="#ff9a1f"/><stop offset="1" stop-color="#ff5a1f"/></linearGradient>
-<filter id="${id}-glow" x="-20%" y="-40%" width="140%" height="180%"><feGaussianBlur stdDeviation="3"/></filter>
+<linearGradient id="${id}-wm" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff3c4"/><stop offset=".45" stop-color="#f4c24d"/><stop offset="1" stop-color="#c98a1e"/></linearGradient>
+<filter id="${id}-shadow" x="-20%" y="-40%" width="140%" height="190%"><feGaussianBlur stdDeviation="1.6"/></filter>
 </defs>
-<text x="120" y="38" text-anchor="middle" font-family="var(--font-geist-sans), system-ui, sans-serif" font-weight="900" font-style="italic" font-size="38" fill="#ff8a1f" stroke="#ff8a1f" stroke-width="6" stroke-linejoin="round" filter="url(#${id}-glow)" opacity=".6">Spot-On</text>
-<text x="120" y="38" text-anchor="middle" font-family="var(--font-geist-sans), system-ui, sans-serif" font-weight="900" font-style="italic" font-size="38" fill="url(#${id}-wm)" stroke="#0b1236" stroke-width="5" paint-order="stroke" stroke-linejoin="round">Spot-On</text>`;
+<text x="120" y="41" text-anchor="middle" font-family="var(--font-geist-sans), system-ui, sans-serif" font-weight="900" font-style="italic" font-size="38" fill="#000" stroke="#000" stroke-width="5" stroke-linejoin="round" filter="url(#${id}-shadow)" opacity=".45">Spot-On</text>
+<text x="120" y="38" text-anchor="middle" font-family="var(--font-geist-sans), system-ui, sans-serif" font-weight="900" font-style="italic" font-size="38" fill="url(#${id}-wm)" stroke="#3a2208" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Spot-On</text>`;
 }
 
 /** Een los svg-bestand voor het app-icoon: het merkteken op een donker afgerond vierkant. */

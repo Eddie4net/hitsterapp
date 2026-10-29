@@ -180,16 +180,26 @@ body {
 }
 
 /* Het speelscherm schaalt mee met de hoogte, zodat er nooit gescrolld hoeft te worden.
-   --card is de zijde van een kaartje; alles op tafel is daarvan afgeleid. */
+   --card-base is de zijde van een kaartje; alles op tafel is daarvan afgeleid. Tijdlijnen
+   overschrijven --card zodat ze met veel kaartjes krimpen in plaats van te scrollen. */
 .fit {
-  --card: clamp(3.5rem, calc((100dvh - 24rem) * 0.25), 10rem);
-  --chair: var(--card);
-  --chair-room: calc(var(--card) * 0.45);
-  --table-pad: clamp(0.5rem, calc(var(--card) * 0.25), 3rem);
+  --card-base: clamp(
+    3rem,
+    min(calc((100dvh - 18rem) * 0.26), calc(100vw * 0.17)),
+    10rem
+  );
+  --card: var(--card-base);
+  --chair: var(--card-base);
+  --chair-room: calc(var(--card-base) * 0.45);
+  --table-pad: clamp(0.5rem, calc(var(--card-base) * 0.2), 2.5rem);
 }
 @media (max-height: 820px) {
+  .fit .plate-hint {
+    display: none;
+  }
+}
+@media (max-height: 760px) {
   .fit {
-    --card: clamp(3.5rem, calc((100dvh - 20rem) * 0.3), 10rem);
     --chair-room: 0.5rem;
   }
   .fit .chairs {
@@ -197,29 +207,10 @@ body {
   }
 }
 
-/* Telefoon liggend: de kop wordt één compacte rij, de kaartjes blijven klein. */
+/* Telefoon liggend: zo laag past niet alles op één scherm, dan liever scrollen dan afknippen. */
 @media (max-height: 520px) {
   .fit {
-    --card: clamp(3.25rem, calc((100dvh - 15rem) * 0.3), 10rem);
-    padding-top: 0.25rem;
-    padding-bottom: 0.25rem;
-  }
-  .fit .fit-header {
-    flex-direction: row;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    gap: 0.25rem 0.75rem;
-    padding: 0.25rem 0.5rem;
-  }
-  .fit .fit-header > div:first-child {
-    width: auto;
-    flex: none;
-  }
-}
-
-/* Zo laag past niet alles op één scherm: dan liever scrollen dan dat er iets wordt afgeknipt. */
-@media (max-height: 520px) {
-  .fit {
+    --card-base: clamp(3rem, calc((100dvh - 16rem) * 0.3), 10rem);
     height: auto;
     min-height: 100dvh;
     overflow-y: auto;

@@ -37,7 +37,7 @@ import { Ambient } from "./Ambient";
 import { FullscreenToggle } from "./FullscreenToggle";
 import { HitsterStamp } from "./HitsterStamp";
 import { MusicControls } from "./MusicControls";
-import { Chair, FabricDefs, Plant } from "./Room";
+import { Chair, FabricDefs } from "./Room";
 import { RulesButton } from "./RulesDialog";
 import { CardBack, CompactCard, SongCard, TokenCoin } from "./SongCard";
 import { SoundToggle } from "./SoundToggle";
@@ -97,19 +97,28 @@ function PlacedCard({
   name,
   color,
   tentative = false,
+  draggable = false,
 }: {
   name: string;
   color: string;
+  /** Mag de speler dit kaartje nog naar een andere plek slepen? */
+  draggable?: boolean;
   /** Nog niet bevestigd: het kaartje mag nog naar een andere plek. */
   tentative?: boolean;
 }) {
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+    id: "placed",
+    disabled: !draggable,
+  });
   return (
     <motion.div
+      ref={setNodeRef}
+      {...(draggable ? { ...listeners, ...attributes } : {})}
       layoutId="active-card"
       transition={{ type: "spring", stiffness: 260, damping: 26 }}
       role="img"
       aria-label={`${name} legde het kaartje hier${tentative ? ", nog te verplaatsen" : ", nog niet omgedraaid"}`}
-      className="rounded-md ring-2"
+      className={`rounded-md ring-2 ${draggable ? "touch-none cursor-grab active:cursor-grabbing" : ""} ${isDragging ? "opacity-30" : ""}`}
       style={{
         ["--tw-ring-color" as string]: color,
         filter: tentative
@@ -131,11 +140,14 @@ function StealToken({
   color,
   playerId,
   tentative = false,
+  onWithdraw,
 }: {
   name: string;
   color: string;
   playerId: number;
   tentative?: boolean;
+  /** Klik op het muntje om het terug te nemen (alleen voor de steler zelf). */
+  onWithdraw?: () => void;
 }) {
   return (
     <div
@@ -144,6 +156,17 @@ function StealToken({
       className={`flex ${SLOT_HEIGHT} w-12 shrink-0 items-center justify-center`}
     >
       <motion.span
+        onClick={onWithdraw}
+        {...(onWithdraw
+          ? {
+              role: "button",
+              tabIndex: 0,
+              title: "Klik om je token terug te nemen",
+              onKeyDown: (e: React.KeyboardEvent) => {
+                if (e.key === "Enter" || e.key === " ") onWithdraw();
+              },
+            }
+          : {})}
         layoutId={`coin-${playerId}`}
         initial={{ y: -70, scale: 1.7, opacity: 0, rotate: -40 }}
         animate={{ y: 0, scale: 1, opacity: 1, rotate: 0 }}
@@ -512,8 +535,6 @@ export function Table({ view }: { view: GameView }) {
     >
       <main className="floor relative flex flex-1 flex-col items-center gap-3 overflow-hidden px-3 pb-[max(1rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))] sm:px-6">
         <FabricDefs />
-        <Plant className="pointer-events-none absolute -right-10 top-28 hidden size-48 min-[1700px]:block" />
-        <Plant className="pointer-events-none absolute -left-12 bottom-16 hidden size-52 min-[1700px]:block" />
         <Ambient pulse={pulse} pulseKey={pulseKey} />
 
         <header className="relative z-30 flex w-full max-w-[1500px] flex-col items-center gap-3 rounded-2xl bg-stone-950/85 p-3 text-white shadow-lg backdrop-blur">
@@ -670,7 +691,7 @@ export function Table({ view }: { view: GameView }) {
                             <div className="flex flex-col items-center gap-2">
                               <p className={`${PLATE} text-sm text-gold`}>
                                 {pickedCoin
-                                  ? "Tik op een andere plus-knop om je token te verschuiven."
+                                  ? "Tik op een andere plus-knop om je token te verschuiven, of tik op het token om het terug te nemen."
                                   : `Kies nu een plek in de tijdlijn van ${player.name}.`}
                               </p>
                               {pickedCoin ? (
@@ -683,6 +704,13 @@ export function Table({ view }: { view: GameView }) {
                                   Token definitief neerleggen
                                 </button>
                               ) : null}
+                              <button
+                                type="button"
+                                onClick={() => act({ type: "pass" })}
+                                className="min-h-11 rounded-xl bg-stone-950/80 px-4 text-sm font-semibold text-white hover:bg-stone-950"
+                              >
+                                Toch niet stelen
+                              </button>
                             </div>
                           ) : (
                             <div className="flex gap-2">
@@ -795,6 +823,7 @@ export function Table({ view }: { view: GameView }) {
                                     name={player.name}
                                     color={playerColor(player.id)}
                                     tentative
+                                    draggable={myTurnToPlace}
                                   />
                                 </li>
                               ) : g.phase === "steal" &&
@@ -807,6 +836,15 @@ export function Table({ view }: { view: GameView }) {
                                     playerId={stealer.id}
                                     color={playerColor(stealer.id)}
                                     tentative
+                                    onWithdraw={
+                                      myTurnToSteal
+                                        ? () =>
+                                            act({
+                                              type: "stealPick",
+                                              index: i,
+                                            })
+                                        : undefined
+                                    }
                                   />
                                 </li>
                               ) : showSlots ? (

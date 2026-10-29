@@ -205,7 +205,8 @@ export const useGameStore = create<GameState>((set, get) => {
       const slots = players[active].timeline.length;
       if (!Number.isInteger(index) || index < 0 || index > slots) return;
       if (placements.some((p) => p.index === index)) return;
-      set({ stealPending: index });
+      // Nogmaals op dezelfde plek: het token wordt teruggenomen.
+      set({ stealPending: get().stealPending === index ? null : index });
     },
 
     confirmSteal: () => {

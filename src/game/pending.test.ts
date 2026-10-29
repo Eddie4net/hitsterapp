@@ -111,6 +111,13 @@ describe("een token neerleggen, verplaatsen en bevestigen", () => {
     expect(s().stealPending).toBeNull();
   });
 
+  it("neemt het token terug als je dezelfde plek nog eens kiest", () => {
+    s().stealPick(1);
+    s().stealPick(1);
+    expect(s().stealPending).toBeNull();
+    expect(s().players[1].tokens).toBe(START_TOKENS);
+  });
+
   it("weigert de plek van de speler aan de beurt", () => {
     s().stealPick(0);
     expect(s().stealPending).toBeNull();
